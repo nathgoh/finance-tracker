@@ -3,6 +3,9 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
+from utils.db_utils import get_db_connection, save_income_data
+from utils.session_state_utils import init_income_session_state
+
 
 def income_form():
     """
@@ -22,7 +25,7 @@ def income_form():
         income = st.number_input("Income", min_value=0.0, step=0.01, format="%.2f")
         date = st.date_input("Date", datetime.now())
         source = st.text_input("Source")
-        submit = st.form_submit_button("Add income")
+        submit = st.form_submit_button("Add Income")
 
     if submit:
         add_income(income, date, source)
@@ -45,6 +48,7 @@ def add_income(amount, date, source):
         "Source": source,
     }
     st.session_state.incomes.append(income)
+    save_income_data()
 
 
 def get_incomes_df():
@@ -57,21 +61,16 @@ def get_incomes_df():
         DataFrame is returned.
     """
 
-    if st.session_state.incomes:
-        df = pd.DataFrame(st.session_state.incomes)
-        df["date"] = pd.to_datetime(df["date"])
-        return df
-    return pd.DataFrame()
+    conn = get_db_connection("finance_tracker.db")
+    return pd.read_sql_query("SELECT amount, date, source FROM incomes", conn)
+
 
 def income_input_page():
     """
     Renders a Streamlit page for adding and managing incomes.
-
-    The page includes:
-
-    1. A form for adding a new income.
-    2. A section for managing income categories, with options to edit or delete existing categories.
     """
+
+    init_income_session_state()
     income_form()
 
 

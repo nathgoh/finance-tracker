@@ -3,10 +3,9 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
-from utils.db_utils import save_expense_data
+from utils.db_utils import get_db_connection, save_expense_data
 from utils.session_state_utils import init_expense_session_state
 
-init_expense_session_state()
 
 def expense_form():
     """
@@ -22,7 +21,7 @@ def expense_form():
     """
 
     st.subheader("Add a New Expense")
-    with st.form("expense_form"):
+    with st.form("expense_form", clear_on_submit=True):
         expense = st.number_input("Expense", min_value=0.0, step=0.01, format="%.2f")
         category = st.selectbox("Categories", st.session_state.categories)
         date = st.date_input("Date", datetime.now())
@@ -55,23 +54,19 @@ def add_expense(amount, category, date, notes):
         "Notes": notes,
     }
     st.session_state.expenses.append(expense)
+    save_expense_data()
 
 
-def get_expenses_df():
+def get_expenses_df() -> pd.DataFrame:
     """
-    Converts the list of expenses in the session state to a Pandas DataFrame.
+    Gets a DataFrame of expenses from the database and session state.
 
-    Returns:
-        DataFrame: A DataFrame containing the expenses, with the 'date' column
-        converted to datetime format. If there are no expenses, an empty
-        DataFrame is returned.
+    Returns a DataFrame containing all expenses from the database and session state.
+    If there are no expenses in the session state, only the database expenses are returned.
     """
 
-    if st.session_state.expenses:
-        df = pd.DataFrame(st.session_state.expenses)
-        df["date"] = pd.to_datetime(df["date"])
-        return df
-    return pd.DataFrame()
+    conn = get_db_connection("finance_tracker.db")
+    return pd.read_sql_query("SELECT amount, category, date, notes FROM expenses", conn)
 
 
 def manage_categories():
@@ -92,7 +87,6 @@ def manage_categories():
     """
 
     with st.sidebar.expander("Manage Categories"):
-        
         # Add new category
         new_category = st.text_input("Add New Category")
         if st.button("Add Category"):
@@ -102,36 +96,42 @@ def manage_categories():
                 st.success(f"Added category: {new_category}")
             elif new_category in st.session_state.categories:
                 st.error("Category already exists!")
-        
+
         st.divider()
-        
+
         # Edit/Delete categories
         st.subheader("Edit Categories")
         for idx, category in enumerate(st.session_state.categories):
-           with st.container():
+            with st.container():
                 # Category name input
-                new_name = st.text_input(f"Category {idx+1}", value=category, key=f"cat_{idx}")
-                
+                new_name = st.text_input(
+                    f"Category {idx+1}", value=category, key=f"cat_{idx}"
+                )
+
                 # Update and Delete button in two columns
                 col1, col2 = st.columns([1, 1])
                 with col1:
-                    if st.button("Update", key=f"update_{idx}", use_container_width=True):
+                    if st.button(
+                        "Update", key=f"update_{idx}", use_container_width=True
+                    ):
                         if new_name != category:
                             # Update category name in expenses
                             for expense in st.session_state.expenses:
-                                if expense['category'] == category:
-                                    expense['category'] = new_name
-                    
+                                if expense["category"] == category:
+                                    expense["category"] = new_name
+
                             # Update category list
                             st.session_state.categories[idx] = new_name
                             save_expense_data()
                             st.success(f"Updated: {category} → {new_name}")
-                
+
                 with col2:
-                    if st.button("Delete", key=f"delete_{idx}", use_container_width=True):
+                    if st.button(
+                        "Delete", key=f"delete_{idx}", use_container_width=True
+                    ):
                         if len(st.session_state.categories) > 1:
                             df = get_expenses_df()
-                            if not df.empty and (df['category'] == category).any():
+                            if not df.empty and (df["category"] == category).any():
                                 st.error(f"Category '{category}' has expenses!")
                             else:
                                 st.session_state.categories.remove(category)
@@ -140,18 +140,16 @@ def manage_categories():
                                 st.rerun()
                         else:
                             st.error("Cannot delete last category!")
-                            
+
+
 def expense_input_page():
     """
     Renders a Streamlit page for adding and managing expenses.
-
-    The page includes:
-
-    1. A form for adding a new expense.
-    2. A section for managing expense categories, with options to edit or delete existing categories.
     """
+
     manage_categories()
     expense_form()
 
 
+init_expense_session_state()
 expense_input_page()
