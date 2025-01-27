@@ -1,50 +1,12 @@
 from datetime import datetime
 
-import json
 import streamlit as st
 import pandas as pd
 
-if "expenses" not in st.session_state:
-    st.session_state.expenses = []
-if "categories" not in st.session_state:
-    try:
-        with open("app/expenses/data/expense_data.json", "r") as f:
-            data = json.load(f)
-            if "categories" in data:
-                st.session_state.categories = data["categories"]
-    except FileNotFoundError:
-        # Default categories
-        st.session_state.categories = [
-            "Personal",
-            "Home",
-            "Health",
-            "Grocery",
-            "Entertainment",
-            "Transportation",
-            "Travel",
-            "Misc",
-        ]
+from utils.db_utils import save_expense_data
+from utils.session_state_utils import init_expense_session_state
 
-
-def save_expense_data():
-    """
-    Saves the expense data to a JSON file.
-
-    The file is named 'expense_data.json' and is saved in the current working
-    directory. The data is saved as a dictionary with two keys: 'expenses' and
-    'categories'. The 'expenses' key contains a list of dictionaries, where each
-    dictionary represents an expense and has the keys 'Amount', 'Category',
-    'Date', and 'Notes'. The 'categories' key contains a list of strings,
-    representing the categories of expenses.
-    """
-
-    data = {
-        "expenses": st.session_state.expenses,
-        "categories": st.session_state.categories,
-    }
-    with open("app/expenses/data/expense_data.json", "w") as f:
-        json.dump(data, f)
-
+init_expense_session_state()
 
 def expense_form():
     """
@@ -77,10 +39,10 @@ def add_expense(amount, category, date, notes):
     Adds a new expense to the session state.
 
     Parameters:
-    - amount (float): The expense amount.
-    - category (str): The category for the expense.
-    - date (datetime): The date of the expense.
-    - notes (str): Additional notes for the expense.
+        amount (float): The expense amount.
+        category (str): The category for the expense.
+        date (datetime): The date of the expense.
+        notes (str): Additional notes for the expense.
 
     The expense is stored as a dictionary with keys 'Amount', 'Category', 'Date', and 'Notes',
     and appended to the 'expenses' list in the session state.
@@ -100,9 +62,9 @@ def get_expenses_df():
     Converts the list of expenses in the session state to a Pandas DataFrame.
 
     Returns:
-    - DataFrame: A DataFrame containing the expenses, with the 'date' column
-      converted to datetime format. If there are no expenses, an empty
-      DataFrame is returned.
+        DataFrame: A DataFrame containing the expenses, with the 'date' column
+        converted to datetime format. If there are no expenses, an empty
+        DataFrame is returned.
     """
 
     if st.session_state.expenses:
@@ -180,6 +142,14 @@ def manage_categories():
                             st.error("Cannot delete last category!")
                             
 def expense_input_page():
+    """
+    Renders a Streamlit page for adding and managing expenses.
+
+    The page includes:
+
+    1. A form for adding a new expense.
+    2. A section for managing expense categories, with options to edit or delete existing categories.
+    """
     manage_categories()
     expense_form()
 
