@@ -1,9 +1,9 @@
 from datetime import datetime
 
 import streamlit as st
-import pandas as pd
 
-from utils.db_utils import get_db_connection, save_expense_data
+from utils.utils import get_expenses_df
+from utils.db_utils import save_expense_data
 from utils.session_state_utils import init_expense_session_state
 
 
@@ -55,18 +55,6 @@ def add_expense(amount, category, date, notes):
     }
     st.session_state.expenses.append(expense)
     save_expense_data()
-
-
-def get_expenses_df() -> pd.DataFrame:
-    """
-    Gets a DataFrame of expenses from the database and session state.
-
-    Returns a DataFrame containing all expenses from the database and session state.
-    If there are no expenses in the session state, only the database expenses are returned.
-    """
-
-    conn = get_db_connection("finance_tracker.db")
-    return pd.read_sql_query("SELECT amount, category, date, notes FROM expenses", conn)
 
 
 def manage_categories():
@@ -147,9 +135,9 @@ def expense_input_page():
     Renders a Streamlit page for adding and managing expenses.
     """
 
+    init_expense_session_state()
     manage_categories()
     expense_form()
 
 
-init_expense_session_state()
 expense_input_page()

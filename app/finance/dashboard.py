@@ -1,6 +1,6 @@
 import streamlit as st
 
-from finance.expense_input import get_expenses_df
+from utils.utils import get_expenses_df
 
 expense_df = get_expenses_df()
 
