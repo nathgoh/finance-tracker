@@ -60,7 +60,7 @@ def init_database():
 
     # Create income table
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS income (
+        CREATE TABLE IF NOT EXISTS incomes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             amount REAL NOT NULL,
             date TEXT NOT NULL,

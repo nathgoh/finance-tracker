@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pandas as pd
 import streamlit as st
 
 from utils.utils import get_expenses_df
@@ -93,7 +94,7 @@ def manage_categories():
             with st.container():
                 # Category name input
                 new_name = st.text_input(
-                    f"Category {idx+1}", value=category, key=f"cat_{idx}"
+                    f"Category {idx + 1}", value=category, key=f"cat_{idx}"
                 )
 
                 # Update and Delete button in two columns
@@ -130,6 +131,56 @@ def manage_categories():
                             st.error("Cannot delete last category!")
 
 
+def get_monthly_breakdown():
+    """
+    Gets a DataFrame with monthly breakdown of expenses.
+    """
+
+    st.divider()
+    st.subheader("Monthly Breakdown")
+
+    expense_df = get_expenses_df()
+    if not expense_df.empty:
+        expense_df["date"] = pd.to_datetime(expense_df["date"])
+        expense_df["month"] = expense_df["date"].dt.month_name()
+        expense_df["year"] = expense_df["date"].dt.year
+
+        # Group by year and month and calculate summaries
+        monthly_breakdown = (
+            expense_df.groupby(["year", "month"])
+            .agg({"amount": ["sum", "count", "mean"]})
+            .round(2)
+        )
+
+        # Flatten column names
+        monthly_breakdown.columns = ["Total ($)", "Number of Expenses", "Average ($)"]
+        monthly_breakdown.sort_index(ascending=[False, False])
+
+        years = sorted(expense_df["year"].unique(), reverse=True)
+        year_select = st.selectbox("Select Year", years, index=0)
+        if year_select:
+            current_month = datetime.now().strftime("%B")
+
+            year_data = monthly_breakdown.loc[year_select]
+            months, month_idx = (
+                year_data.index.tolist(),
+                monthly_breakdown.index.get_loc(current_month)
+                if current_month in monthly_breakdown.index
+                else 0,
+            )
+            month_select = st.selectbox("Select Month", months, index=month_idx)
+            if month_select:
+                breakdown = year_data.loc[month_select]
+                total, num_expense, avg = st.columns(3)
+
+                with total:
+                    st.metric("Total ($)", breakdown["Total ($)"])
+                with num_expense:
+                    st.metric("Number of Expenses", breakdown["Number of Expenses"])
+                with avg:
+                    st.metric("Average ($)", breakdown["Average ($)"])
+
+
 def expense_input_page():
     """
     Renders a Streamlit page for adding and managing expenses.
@@ -138,6 +189,7 @@ def expense_input_page():
     init_expense_session_state()
     manage_categories()
     expense_form()
+    get_monthly_breakdown()
 
 
 expense_input_page()
