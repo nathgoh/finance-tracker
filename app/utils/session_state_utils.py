@@ -17,7 +17,7 @@ def init_expense_session_state():
         cursor = conn.cursor()
 
         # Get categories from database
-        cursor.execute("SELECT category_name FROM categories")
+        cursor.execute("SELECT category FROM categories")
         categories = [row[0] for row in cursor.fetchall()]
 
         if not categories:
@@ -36,7 +36,7 @@ def init_expense_session_state():
 
             for category in default_categories:
                 cursor.execute(
-                    "INSERT INTO categories (category_name) VALUES (?)", (category,)
+                    "INSERT INTO categories (category) VALUES (?)", (category,)
                 )
             st.session_state.categories = default_categories
         else:

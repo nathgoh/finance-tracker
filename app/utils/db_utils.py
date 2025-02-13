@@ -42,7 +42,7 @@ def init_database():
     # Create categories table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS categories (
-            category_name TEXT PRIMARY KEY
+            category TEXT PRIMARY KEY
         )
     """)
 
@@ -51,10 +51,10 @@ def init_database():
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             amount REAL NOT NULL,
-            category INTEGER NOT NULL,
+            category TEXT NOT NULL,
             date TEXT NOT NULL,
             notes TEXT,
-            FOREIGN KEY (category) REFERENCES categories (category_name)
+            FOREIGN KEY (category) REFERENCES categories (category)
         )
     """)
 
@@ -70,63 +70,3 @@ def init_database():
 
     conn.commit()
     conn.close()
-
-
-def save_expense_data():
-    """
-    Save expenses data to SQLite database
-    """
-
-    conn = get_db_connection("finance_tracker.db")
-    try:
-        cursor = conn.cursor()
-
-        # Update categories table
-        cursor.execute("DELETE FROM categories")
-        cursor.executemany(
-            "INSERT INTO categories (category_name) VALUES (?)",
-            [(category,) for category in st.session_state.categories],
-        )
-
-        # Update expenses table
-        for expense in st.session_state.expenses:
-            cursor.executemany(
-                "INSERT INTO expenses (amount, category, date, notes) VALUES (?, ?, ?, ?)",
-                [
-                    (
-                        expense["Amount"],
-                        expense["Category"],
-                        expense["Date"],
-                        expense["Notes"],
-                    )
-                ],
-            )
-
-        conn.commit()
-    except sqlite3.Error as e:
-        st.error(f"Failed to saving expense input data: {e}")
-    finally:
-        conn.close()
-
-
-def save_income_data():
-    """
-    Save income data to SQLite database
-    """
-
-    conn = get_db_connection("finance_tracker.db")
-    try:
-        cursor = conn.cursor()
-
-        # Update income table
-        for income in st.session_state.incomes:
-            cursor.executemany(
-                "INSERT INTO income (amount, date, source) VALUES (?, ?, ?)",
-                [(income["Amount"], income["Date"], income["Source"])],
-            )
-
-        conn.commit()
-    except sqlite3.Error as e:
-        st.error(f"Failed to saving income input data: {e}")
-    finally:
-        conn.close()

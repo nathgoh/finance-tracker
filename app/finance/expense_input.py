@@ -3,8 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from utils.utils import get_expenses_df
-from utils.db_utils import save_expense_data
+from utils.expense_utils import get_expenses_df, save_expense_data
 from utils.session_state_utils import init_expense_session_state
 
 
@@ -180,6 +179,11 @@ def get_monthly_breakdown():
                 with avg:
                     st.metric("Average ($)", breakdown["Average ($)"])
 
+                month_expense_df = get_expenses_df(f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}")
+                edited_month_expense_df = st.data_editor(month_expense_df, key="edited_month_expense",num_rows="dynamic", use_container_width=True)
+                
+                if st.session_state.edited_month_expense is not None:
+                    st.write(st.session_state.edited_month_expense)
 
 def expense_input_page():
     """

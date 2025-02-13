@@ -1,9 +1,8 @@
 from datetime import datetime
 
 import streamlit as st
-import pandas as pd
 
-from utils.db_utils import get_db_connection, save_income_data
+from utils.income_utils import save_income_data
 from utils.session_state_utils import init_income_session_state
 
 
@@ -49,20 +48,6 @@ def add_income(amount, date, source):
     }
     st.session_state.incomes.append(income)
     save_income_data()
-
-
-def get_incomes_df():
-    """
-    Converts the list of incomes in the session state to a Pandas DataFrame.
-
-    Returns:
-        DataFrame: A DataFrame containing the incomes, with the 'date' column
-        converted to datetime format. If there are no incomes, an empty
-        DataFrame is returned.
-    """
-
-    conn = get_db_connection("finance_tracker.db")
-    return pd.read_sql_query("SELECT amount, date, source FROM incomes", conn)
 
 
 def income_input_page():
