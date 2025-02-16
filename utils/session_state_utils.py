@@ -51,5 +51,5 @@ def init_income_session_state():
     Initializes the session state variables if they don't exist for the income input page.
     """
 
-    if "income" not in st.session_state:
-        st.session_state.income = []
+    if "incomes" not in st.session_state:
+        st.session_state.incomes = []

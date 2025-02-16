@@ -1,2 +1,5 @@
 run:
-	streamlit run app/app.py
+	streamlit run app.py
+
+lint:
+	ruff format && ruff check --fix

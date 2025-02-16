@@ -4,7 +4,7 @@ import streamlit as st
 
 
 def get_database_path(file_name) -> str:
-    db_dir = os.path.join("./app/db")
+    db_dir = os.path.join("./db")
 
     # Create directory if it doesn't exist
     try:

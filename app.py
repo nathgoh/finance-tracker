@@ -20,6 +20,12 @@ expense_input = st.Page(
 income_input = st.Page(
     "finance/income_input.py", title="Income Input", icon=":material/savings:"
 )
+analysis = st.Page("analysis/analysis.py", title="Analysis", icon=":material/insights:")
 
-pages = st.navigation({"Expenses": [finance_dashboard, expense_input, income_input]})
+pages = st.navigation(
+    {
+        "Finances": [finance_dashboard, expense_input, income_input],
+        "Analysis": [analysis],
+    }
+)
 pages.run()

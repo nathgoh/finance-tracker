@@ -5,7 +5,7 @@ import sqlite3
 import streamlit as st
 
 from utils.db_utils import get_db_connection
-from resources.contants import DB_FILE
+from resources.constants import DB_FILE
 
 
 def get_expenses_df(date=str(datetime.now().year)) -> pd.DataFrame:
@@ -16,13 +16,13 @@ def get_expenses_df(date=str(datetime.now().year)) -> pd.DataFrame:
     """
 
     conn = get_db_connection("finance_tracker.db")
-    
+
     sql_str = f"""
-        SELECT amount, category, date, notes
+        SELECT id, amount, category, date, notes
         FROM expenses
         WHERE date LIKE '{date}%'
     """
-    
+
     return pd.read_sql_query(sql_str, conn)
 
 
@@ -59,7 +59,7 @@ def save_expense_data():
             """
             INSERT INTO expenses (amount, category, date, notes)
             VALUES (?, ?, ?, ?)
-        """,
+            """,
             (
                 new_expense["Amount"],
                 category,
@@ -73,3 +73,25 @@ def save_expense_data():
         st.error(f"Failed to saving expense input data: {e}")
     finally:
         conn.close()
+
+
+def delete_expense_data(expense_ids: list):
+    """
+    Delete expenses from the database based on their primary key values.
+    """
+    conn = get_db_connection(DB_FILE)
+    if expense_ids:
+        try:
+            c = conn.cursor()
+            c.execute(
+                f"""
+                DELETE FROM expenses
+                WHERE id {f"IN {tuple(expense_ids)}" if len(expense_ids) > 1 else f"= {expense_ids[0]}"}
+                """
+            )
+            conn.commit()
+            st.success("Expense(s) deleted successfully!")
+        except sqlite3.Error as e:
+            st.error(f"Failed to delete expense data: {e}")
+        finally:
+            conn.close()
