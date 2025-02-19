@@ -42,7 +42,8 @@ def init_database():
     # Create categories table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS categories (
-            category TEXT PRIMARY KEY
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL
         )
     """)
 
@@ -54,6 +55,8 @@ def init_database():
             category TEXT NOT NULL,
             date TEXT NOT NULL,
             notes TEXT,
+            frequency TEXT,
+            recurring_id TEXT,
             FOREIGN KEY (category) REFERENCES categories (category)
         )
     """)

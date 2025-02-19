@@ -1,10 +1,19 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from time import sleep
 
+import uuid
 import pandas as pd
 import streamlit as st
 
-from utils.expense_utils import get_expenses_df, save_expense_data, delete_expense_data
+from utils.expense_utils import (
+    get_expenses_df,
+    save_expense_data,
+    delete_expense_data,
+    manage_categories_data,
+)
 from utils.session_state_utils import init_expense_session_state
+from resources.constants import MONTHS_MAP
 
 
 def expense_form():
@@ -22,18 +31,21 @@ def expense_form():
 
     st.subheader("Add a New Expense")
     with st.form("expense_form", clear_on_submit=True):
-        expense = st.number_input("Expense", min_value=0.0, step=0.01, format="%.2f")
+        expense = st.number_input(
+            "Expense", value=None, placeholder="Enter expense amount...", format="%.2f"
+        )
         category = st.selectbox("Categories", st.session_state.categories)
         date = st.date_input("Date", datetime.now())
         notes = st.text_input("Notes")
         submit = st.form_submit_button("Add Expense")
 
     if submit:
-        add_expense(expense, category, date, notes)
-        st.success("Expense added successfully!")
+        if expense is None:
+            st.error("Expense amount is required!")
+        else:
+            add_expense(expense, category, date, notes, None, None)
 
-
-def add_expense(amount, category, date, notes):
+def add_expense(amount, category, date, notes, frequency: str | None, recurring_id: str | None):
     """
     Adds a new expense to the session state.
 
@@ -42,6 +54,8 @@ def add_expense(amount, category, date, notes):
         category (str): The category for the expense.
         date (datetime): The date of the expense.
         notes (str): Additional notes for the expense.
+        frequency (str | None): The frequency if the expense is recurring, otherwise None.
+        recurring_id (str | None): The recurring ID if the expense is recurring, otherwise None.
 
     The expense is stored as a dictionary with keys 'Amount', 'Category', 'Date', and 'Notes',
     and appended to the 'expenses' list in the session state.
@@ -52,9 +66,66 @@ def add_expense(amount, category, date, notes):
         "Category": category,
         "Date": date.strftime("%Y-%m-%d"),
         "Notes": notes,
+        "Frequency": frequency,
+        "Recurring ID": recurring_id,
     }
     st.session_state.expenses.append(expense)
     save_expense_data()
+
+
+def recurring_expense_form():
+    """
+    Renders a form for adding a new recurring expense. The form contains fields for:
+    - expense amount
+    - category selection
+    - start date selection
+    - end date selection
+    - frequency selection (weekly, biweekly, monthly, quarterly, yearly)
+    - notes text input
+
+    When the form is submitted, the add_recurring_expense function is called with the
+    form values as arguments. If the form is submitted successfully,
+    a success message is displayed.
+    """
+
+    st.subheader("Add a New Recurring Expense")
+    with st.form("recurring_expense_form", clear_on_submit=True):
+        expense = st.number_input(
+            "Expense",
+            value=None,
+            placeholder="Enter expense amount...",
+            format="%.2f",
+        )
+        category = st.selectbox("Category", st.session_state.categories)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            start_date = st.date_input("Start Date")
+        with col2:
+            end_date = st.date_input("End Date", min_value=start_date)
+        frequency = st.selectbox(
+            "Frequency",
+            options=["Weekly", "Biweekly", "Monthly", "Quarterly", "Yearly"],
+        )
+        notes = st.text_input("Notes")
+        submit = st.form_submit_button("Add Recurring Transaction")
+
+        if submit:
+            if expense is None:
+                st.error("Expense amount is required!")
+            else:
+                recurring_id = str(uuid.uuid4())
+                current_date = start_date
+                frequency_delta = {
+                    "Weekly": relativedelta(weeks=1),
+                    "Biweekly": relativedelta(weeks=2),
+                    "Monthly": relativedelta(months=1),
+                    "Quarterly": relativedelta(months=3),
+                    "Yearly": relativedelta(years=1),
+                }
+                while current_date <= end_date:
+                    add_expense(expense, category, current_date, notes, frequency, recurring_id)
+                    current_date += frequency_delta[frequency]
 
 
 def manage_categories():
@@ -80,8 +151,10 @@ def manage_categories():
         if st.button("Add Category"):
             if new_category and new_category not in st.session_state.categories:
                 st.session_state.categories.append(new_category)
-                save_expense_data()
+                manage_categories_data(new_category, None, None)
                 st.success(f"Added category: {new_category}")
+                sleep(0.5)
+                st.rerun()
             elif new_category in st.session_state.categories:
                 st.error("Category already exists!")
 
@@ -92,7 +165,7 @@ def manage_categories():
         for idx, category in enumerate(st.session_state.categories):
             with st.container():
                 # Category name input
-                new_name = st.text_input(
+                new_category_name = st.text_input(
                     f"Category {idx + 1}", value=category, key=f"cat_{idx}"
                 )
 
@@ -102,17 +175,20 @@ def manage_categories():
                     if st.button(
                         "Update", key=f"update_{idx}", use_container_width=True
                     ):
-                        if new_name != category:
+                        if new_category_name != category:
                             # Update category name in expenses
                             for expense in st.session_state.expenses:
                                 if expense["category"] == category:
-                                    expense["category"] = new_name
+                                    expense["category"] = new_category_name
 
                             # Update category list
-                            st.session_state.categories[idx] = new_name
-                            save_expense_data()
-                            st.success(f"Updated: {category} → {new_name}")
-
+                            st.session_state.categories[idx] = new_category_name
+                            manage_categories_data(
+                                None, None, [category, new_category_name]
+                            )
+                            st.success(f"Updated: {category} → {new_category_name}")
+                            sleep(0.5)
+                            st.rerun()
                 with col2:
                     if st.button(
                         "Delete", key=f"delete_{idx}", use_container_width=True
@@ -123,8 +199,9 @@ def manage_categories():
                                 st.error(f"Category '{category}' has expenses!")
                             else:
                                 st.session_state.categories.remove(category)
-                                save_expense_data()
+                                manage_categories_data(None, category, None)
                                 st.success(f"Deleted: {category}")
+                                sleep(0.5)
                                 st.rerun()
                         else:
                             st.error("Cannot delete last category!")
@@ -159,14 +236,10 @@ def get_monthly_breakdown():
         year_select = st.selectbox("Select Year", years, index=0)
         if year_select:
             current_month = datetime.now().strftime("%B")
-
             year_data = monthly_breakdown.loc[year_select]
-            months, month_idx = (
-                year_data.index.tolist(),
-                monthly_breakdown.index.get_loc(current_month)
-                if current_month in monthly_breakdown.index
-                else 0,
-            )
+            months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
+            month_idx = months.index(current_month)
+        
             month_select = st.selectbox("Select Month", months, index=month_idx)
             if month_select:
                 breakdown = year_data.loc[month_select]
@@ -202,7 +275,7 @@ def get_monthly_breakdown():
                     ]
                     delete_expense_data(ids_to_delete)
                     st.session_state.edited_month_expense["deleted_rows"] = None
-                    st.rerun(scope="fragment")
+                    st.rerun()
 
 
 def expense_input_page():
@@ -212,7 +285,14 @@ def expense_input_page():
 
     init_expense_session_state()
     manage_categories()
-    expense_form()
+
+    single_expense, recurring_expense = st.tabs(
+        ["New Expense", "New Recurring Expense"]
+    )
+    with single_expense:
+        expense_form()
+    with recurring_expense:
+        recurring_expense_form()
     get_monthly_breakdown()
 
 

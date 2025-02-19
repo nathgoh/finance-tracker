@@ -57,14 +57,16 @@ def save_expense_data():
         # Insert the expense
         c.execute(
             """
-            INSERT INTO expenses (amount, category, date, notes)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO expenses (amount, category, date, notes, frequency, recurring_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 new_expense["Amount"],
                 category,
                 new_expense["Date"],
                 new_expense["Notes"],
+                new_expense["Frequency"],
+                new_expense["Recurring ID"],
             ),
         )
 
@@ -95,3 +97,32 @@ def delete_expense_data(expense_ids: list):
             st.error(f"Failed to delete expense data: {e}")
         finally:
             conn.close()
+
+
+def manage_categories_data(
+    new_category: str | None, delete_category: str | None, update_category: list | None
+):
+    """
+    Manages the categories of expenses.
+    """
+
+    conn = get_db_connection(DB_FILE)
+    try:
+        c = conn.cursor()
+        if new_category:
+            c.execute("INSERT INTO categories (category) VALUES (?)", (new_category,))
+        elif delete_category:
+            c.execute("DELETE FROM categories WHERE category = ?", (delete_category,))
+        elif update_category:
+            c.execute(
+                "UPDATE categories SET category = ? WHERE category = ?",
+                (
+                    update_category[1],
+                    update_category[0],
+                ),
+            )
+        conn.commit()
+    except sqlite3.Error as e:
+        st.error(f"Failed to saving category input data: {e}")
+    finally:
+        conn.close()

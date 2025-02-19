@@ -21,16 +21,19 @@ def income_form():
     """
 
     st.subheader("Add a New Income")
-    with st.form("income_form"):
-        income = st.number_input("Income", min_value=0.0, step=0.01, format="%.2f")
+    with st.form("income_form", clear_on_submit=True):
+        income = st.number_input(
+            "Income", value=None, placeholder="Enter income amount...", format="%.2f"
+        )
         date = st.date_input("Date", datetime.now())
         source = st.text_input("Source")
         submit = st.form_submit_button("Add Income")
 
     if submit:
-        add_income(income, date, source)
-        st.success("Income added successfully!")
-
+        if income is None:
+            st.error("Income amount is required!")
+        else:
+            add_income(income, date, source)
 
 def add_income(amount, date, source):
     """
