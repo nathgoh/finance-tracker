@@ -45,7 +45,10 @@ def expense_form():
         else:
             add_expense(expense, category, date, notes, None, None)
 
-def add_expense(amount, category, date, notes, frequency: str | None, recurring_id: str | None):
+
+def add_expense(
+    amount, category, date, notes, frequency: str | None, recurring_id: str | None
+):
     """
     Adds a new expense to the session state.
 
@@ -124,7 +127,9 @@ def recurring_expense_form():
                     "Yearly": relativedelta(years=1),
                 }
                 while current_date <= end_date:
-                    add_expense(expense, category, current_date, notes, frequency, recurring_id)
+                    add_expense(
+                        expense, category, current_date, notes, frequency, recurring_id
+                    )
                     current_date += frequency_delta[frequency]
 
 
@@ -239,7 +244,7 @@ def get_monthly_breakdown():
             year_data = monthly_breakdown.loc[year_select]
             months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
             month_idx = months.index(current_month)
-        
+
             month_select = st.selectbox("Select Month", months, index=month_idx)
             if month_select:
                 breakdown = year_data.loc[month_select]

@@ -35,6 +35,7 @@ def income_form():
         else:
             add_income(income, date, source)
 
+
 def add_income(amount, date, source):
     """
     Adds a new income to the session state.

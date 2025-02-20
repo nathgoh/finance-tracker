@@ -1,5 +1,7 @@
 DB_FILE = "finance_tracker.db"
 
+OLLAMA_ENDPOINT = "http://gohcloud.local:11434"
+
 MONTHS_MAP = {
     "January": 1,
     "February": 2,
@@ -12,5 +14,5 @@ MONTHS_MAP = {
     "September": 9,
     "October": 10,
     "November": 11,
-    "December": 12
+    "December": 12,
 }
