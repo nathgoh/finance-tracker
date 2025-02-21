@@ -101,10 +101,10 @@ def recurring_expense_form():
         )
         category = st.selectbox("Category", st.session_state.categories)
 
-        col1, col2 = st.columns(2)
-        with col1:
+        col_1, col_2 = st.columns(2)
+        with col_1:
             start_date = st.date_input("Start Date")
-        with col2:
+        with col_2:
             end_date = st.date_input("End Date", min_value=start_date)
         frequency = st.selectbox(
             "Frequency",
@@ -175,8 +175,8 @@ def manage_categories():
                 )
 
                 # Update and Delete button in two columns
-                col1, col2 = st.columns([1, 1])
-                with col1:
+                col_1, col_2 = st.columns([1, 1])
+                with col_1:
                     if st.button(
                         "Update", key=f"update_{idx}", use_container_width=True
                     ):
@@ -194,7 +194,7 @@ def manage_categories():
                             st.success(f"Updated: {category} → {new_category_name}")
                             sleep(0.5)
                             st.rerun()
-                with col2:
+                with col_2:
                     if st.button(
                         "Delete", key=f"delete_{idx}", use_container_width=True
                     ):

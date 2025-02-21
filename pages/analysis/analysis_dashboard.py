@@ -2,9 +2,11 @@ import streamlit as st
 
 from utils.ai_utils import stream_llm_output
 
-st.title("Analysis Dashboard")
+st.title("Financial Analysis")
 
-model = st.selectbox("Select a model", ["smollm2:1.7b-instruct-q8_0", "dolphin3:latest"])
+model = st.selectbox(
+    "Select a model", ["smollm2:1.7b-instruct-q8_0", "dolphin3:latest"]
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -19,5 +21,5 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-       response = st.write_stream(stream_llm_output(model, prompt))
+        response = st.write_stream(stream_llm_output(model, prompt))
     st.session_state.messages.append({"role": "assistant", "content": response})
