@@ -244,8 +244,7 @@ def get_monthly_breakdown():
             current_month = datetime.now().strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
             months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
-            month_idx = months.index(current_month)
-
+            month_idx = next((i for i, m in enumerate(months) if m == current_month), months.index(months[0]) if months else 0)
             month_select = st.selectbox("Select Month", months, index=month_idx)
             if month_select:
                 breakdown = year_data.loc[month_select]
