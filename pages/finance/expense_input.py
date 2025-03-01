@@ -127,6 +127,7 @@ def recurring_expense_form():
                     "Yearly": relativedelta(years=1),
                 }
                 while current_date <= end_date:
+                    print(current_date)
                     add_expense(
                         expense, category, current_date, notes, frequency, recurring_id
                     )
