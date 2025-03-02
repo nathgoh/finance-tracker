@@ -105,7 +105,7 @@ def recurring_expense_form():
         with col_1:
             start_date = st.date_input("Start Date")
         with col_2:
-            end_date = st.date_input("End Date", min_value=start_date)
+            end_date = st.date_input("End Date")
         frequency = st.selectbox(
             "Frequency",
             options=["Weekly", "Biweekly", "Monthly", "Quarterly", "Yearly"],
@@ -126,8 +126,8 @@ def recurring_expense_form():
                     "Quarterly": relativedelta(months=3),
                     "Yearly": relativedelta(years=1),
                 }
+      
                 while current_date <= end_date:
-                    print(current_date)
                     add_expense(
                         expense, category, current_date, notes, frequency, recurring_id
                     )

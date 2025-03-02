@@ -11,22 +11,22 @@ st.set_page_config(
 
 # Finance tracking
 finance_dashboard = st.Page(
-    "pages/finance/finance_dashboard.py",
+    "tabs/finance/finance_dashboard.py",
     title="Finance Dashboard",
     icon=":material/dashboard:",
 )
 expense_input = st.Page(
-    "pages/finance/expense_input.py", title="Expense Input", icon=":material/payments:"
+    "tabs/finance/expense_input.py", title="Expense Input", icon=":material/payments:"
 )
 income_input = st.Page(
-    "pages/finance/income_input.py", title="Income Input", icon=":material/savings:"
+    "tabs/finance/income_input.py", title="Income Input", icon=":material/savings:"
 )
 # Finance analysis
 analysis_dashboard = st.Page(
-    "pages/analysis/analysis_dashboard.py", title="Analysis", icon=":material/insights:"
+    "tabs/analysis/analysis_dashboard.py", title="Analysis", icon=":material/insights:"
 )
 trading_dashboard = st.Page(
-    "pages/trading/trading_dashboard.py", title="Trading", icon=":material/trending_up:"
+    "tabs/trading/trading_dashboard.py", title="Trading", icon=":material/trending_up:"
 )
 
 
