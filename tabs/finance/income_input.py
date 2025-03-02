@@ -113,6 +113,14 @@ def get_monthly_breakdown():
                     num_rows="dynamic",
                     use_container_width=True,
                     column_order=["amount", "date", "source"],
+                    column_config={
+                        "amount": st.column_config.NumberColumn(
+                            "Amount ($)", format="$%d"
+                        ),
+                        "date": st.column_config.TextColumn("Date"),
+                        "source": st.column_config.TextColumn("Source"),
+                    },
+                    hide_index=True,
                 )
 
                 if st.session_state.edited_month_income.get("deleted_rows") is not None:

@@ -126,7 +126,7 @@ def recurring_expense_form():
                     "Quarterly": relativedelta(months=3),
                     "Yearly": relativedelta(years=1),
                 }
-      
+
                 while current_date <= end_date:
                     add_expense(
                         expense, category, current_date, notes, frequency, recurring_id
@@ -244,7 +244,10 @@ def get_monthly_breakdown():
             current_month = datetime.now().strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
             months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
-            month_idx = next((i for i, m in enumerate(months) if m == current_month), months.index(months[0]) if months else 0)
+            month_idx = next(
+                (i for i, m in enumerate(months) if m == current_month),
+                months.index(months[0]) if months else 0,
+            )
             month_select = st.selectbox("Select Month", months, index=month_idx)
             if month_select:
                 breakdown = year_data.loc[month_select]
@@ -266,6 +269,15 @@ def get_monthly_breakdown():
                     num_rows="dynamic",
                     use_container_width=True,
                     column_order=["amount", "category", "date", "notes"],
+                    column_config={
+                        "amount": st.column_config.NumberColumn(
+                            "Amount ($)", format="$%d"
+                        ),
+                        "category": st.column_config.TextColumn("Category"),
+                        "date": st.column_config.TextColumn("Date"),
+                        "notes": st.column_config.TextColumn("Notes"),
+                    },
+                    hide_index=True,
                 )
 
                 if (

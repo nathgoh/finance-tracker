@@ -47,7 +47,11 @@ def expense_charts():
         )
         monthly_expense_df.index = monthly_expense_df.index.month_name()
         line_chart = px.line(
-            monthly_expense_df, x=None, y="Amount ($)", color="Category", symbol="Category"
+            monthly_expense_df,
+            x=None,
+            y="Amount ($)",
+            color="Category",
+            symbol="Category",
         )
 
     return expense_pie, line_chart, monthly_expense_df
@@ -56,18 +60,31 @@ def expense_charts():
 def dashboard():
     # Get expense figures/charts
     expense_pie, line_chart, monthly_expense_df = expense_charts()
-    if expense_pie is not None and line_chart is not None and not monthly_expense_df.empty:
+    if (
+        expense_pie is not None
+        and line_chart is not None
+        and not monthly_expense_df.empty
+    ):
         col_1, col_2 = st.columns([0.4, 0.6])
         with col_1:
             st.plotly_chart(expense_pie)
         with col_2:
             st.plotly_chart(line_chart)
 
-        avg_month_expense_df = (
-            monthly_expense_df.groupby("Date")["Amount ($)"].mean().reset_index()
+        sum_month_expense_df = (
+            monthly_expense_df.groupby("Date")["Amount ($)"]
+            .sum()
+            .reset_index()
+            .sort_values(by="Date", key=lambda x: [MONTHS_MAP[m] for m in x])
+        ).reset_index(drop=True)
+        st.dataframe(
+            sum_month_expense_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Amount ($)": st.column_config.NumberColumn("Amount ($)", format="$%d")
+            },
         )
-        avg_month_expense_df.reindex(MONTHS_MAP.keys())
-        st.table(avg_month_expense_df)
 
 
 dashboard()
