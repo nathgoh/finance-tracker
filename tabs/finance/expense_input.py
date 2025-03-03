@@ -271,7 +271,7 @@ def get_monthly_breakdown():
                     column_order=["amount", "category", "date", "notes"],
                     column_config={
                         "amount": st.column_config.NumberColumn(
-                            "Amount ($)", format="$%d"
+                            "Amount ($)", format="$%.2f"
                         ),
                         "category": st.column_config.TextColumn("Category"),
                         "date": st.column_config.TextColumn("Date"),

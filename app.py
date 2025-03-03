@@ -7,6 +7,7 @@ init_database()
 st.set_page_config(
     page_title="Finance App",
     page_icon="💵",
+    layout="wide"
 )
 
 # Finance tracking
