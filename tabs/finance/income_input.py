@@ -5,6 +5,7 @@ from datetime import datetime
 
 from utils.income_utils import get_incomes_df, save_income_data, delete_income_data
 from utils.session_state_utils import init_income_session_state
+from resources.constants import MONTHS_MAP
 
 
 def income_form():
