@@ -84,13 +84,11 @@ def get_monthly_breakdown():
         year_select = st.selectbox("Select Year", years, index=0)
         if year_select:
             current_month = datetime.now().strftime("%B")
-
             year_data = monthly_breakdown.loc[year_select]
-            months, month_idx = (
-                year_data.index.tolist(),
-                monthly_breakdown.index.get_loc(current_month)
-                if current_month in monthly_breakdown.index
-                else 0,
+            months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
+            month_idx = next(
+                (i for i, m in enumerate(months) if m == current_month),
+                months.index(months[0]) if months else 0,
             )
             month_select = st.selectbox("Select Month", months, index=month_idx)
             if month_select:
