@@ -8,7 +8,7 @@ client = Client(
 
 
 def stream_llm_output(
-    model: str, prompt: str, options={"temperature": 0.5, "top_p": 0.95}
+    model: str, prompt: str, options={"temperature": 0.4, "top_p": 0.95}
 ):
     """
     Stream the output of a LLM deployed from Ollama.
