@@ -11,14 +11,14 @@ income_df = get_incomes_df()
 st.title("Finance Dashboard")
 
 
-def expense_charts():
+def expense_charts() -> tuple:
     """
     Expense figures and graphs to visually give a breakdown of your finances.
     """
 
     # Expense dataframe, reformat to have better looking labels
     expense_df = get_expenses_df()
-    expense_pie, line_chart, monthly_expense_df = None, None, None
+    expense_pie, line_chart, monthly_expense_df = None, None, pd.DataFrame()
     if not expense_df.empty:
         reformatted_expense_df = pd.DataFrame(
             {
@@ -82,7 +82,9 @@ def dashboard():
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Amount ($)": st.column_config.NumberColumn("Amount ($)", format="$%.2f")
+                "Amount ($)": st.column_config.NumberColumn(
+                    "Amount ($)", format="$%.2f"
+                )
             },
         )
 

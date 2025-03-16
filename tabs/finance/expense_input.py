@@ -5,6 +5,7 @@ from time import sleep
 import uuid
 import pandas as pd
 import streamlit as st
+from streamlit.elements.widgets.time_widgets import DateWidgetReturn
 
 from utils.expense_utils import (
     get_expenses_df,
@@ -47,7 +48,12 @@ def expense_form():
 
 
 def add_expense(
-    amount, category, date, notes, frequency: str | None, recurring_id: str | None
+    amount: float,
+    category: str,
+    date: DateWidgetReturn,
+    notes: str,
+    frequency: str | None,
+    recurring_id: str | None,
 ):
     """
     Adds a new expense to the session state.
@@ -55,7 +61,7 @@ def add_expense(
     Parameters:
         amount (float): The expense amount.
         category (str): The category for the expense.
-        date (datetime): The date of the expense.
+        date (DateWidgetReturn): The date of the expense.
         notes (str): Additional notes for the expense.
         frequency (str | None): The frequency if the expense is recurring, otherwise None.
         recurring_id (str | None): The recurring ID if the expense is recurring, otherwise None.
@@ -263,12 +269,13 @@ def get_monthly_breakdown():
                 month_expense_df = get_expenses_df(
                     f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
                 )
+
                 st.data_editor(
                     month_expense_df,
                     key="edited_month_expense",
                     num_rows="dynamic",
                     use_container_width=True,
-                    column_order=["amount", "category", "date", "notes"],
+                    column_order=["date", "category", "amount", "notes"],
                     column_config={
                         "amount": st.column_config.NumberColumn(
                             "Amount ($)", format="$%.2f"

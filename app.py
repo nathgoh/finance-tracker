@@ -4,11 +4,7 @@ from utils.db_utils import init_database
 
 init_database()
 
-st.set_page_config(
-    page_title="Finance App",
-    page_icon="💵",
-    layout="wide"
-)
+st.set_page_config(page_title="Finance App", page_icon="💵", layout="wide")
 
 # Finance tracking
 finance_dashboard = st.Page(

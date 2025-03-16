@@ -4,9 +4,7 @@ from utils.ai_utils import stream_llm_output
 
 st.title("Financial Analysis")
 
-model = st.selectbox(
-    "Select a model", ["smollm2:1.7b-instruct-q8_0", "dolphin3:latest"]
-)
+model = st.selectbox("Select a model", ["smollm2:1.7b-instruct-q8_0"])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
