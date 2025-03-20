@@ -2,22 +2,23 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
+from utils.db_utils import get_db_connection
 from utils.expense_utils import get_expenses_df
 from utils.income_utils import get_incomes_df
-from resources.constants import MONTHS_MAP
+from resources.constants import DB_FILE, MONTHS_MAP
 
 income_df = get_incomes_df()
 
 st.title("Finance Dashboard")
 
 
-def expense_charts() -> tuple:
+def expense_charts(year) -> tuple:
     """
     Expense figures and graphs to visually give a breakdown of your finances.
     """
 
     # Expense dataframe, reformat to have better looking labels
-    expense_df = get_expenses_df()
+    expense_df = get_expenses_df(year)
     expense_pie, line_chart, monthly_expense_df = None, None, pd.DataFrame()
     if not expense_df.empty:
         reformatted_expense_df = pd.DataFrame(
@@ -58,35 +59,46 @@ def expense_charts() -> tuple:
 
 
 def dashboard():
-    # Get expense figures/charts
-    expense_pie, line_chart, monthly_expense_df = expense_charts()
-    if (
-        expense_pie is not None
-        and line_chart is not None
-        and not monthly_expense_df.empty
-    ):
-        col_1, col_2 = st.columns([0.4, 0.6])
-        with col_1:
-            st.plotly_chart(expense_pie)
-        with col_2:
-            st.plotly_chart(line_chart)
+    conn = get_db_connection(DB_FILE)
+    sql_str = f"""
+        SELECT date
+        FROM expenses
+    """
+    dates = pd.read_sql_query(sql_str, conn)
+    conn.close()
+    
+    years = sorted(pd.to_datetime(dates["date"]).dt.year.unique(), reverse=True)
+    year_select = st.selectbox("Select Year", years, index=0)
+    if year_select:
+        # Get expense figures/charts
+        expense_pie, line_chart, monthly_expense_df = expense_charts(year_select)
+        if (
+            expense_pie is not None
+            and line_chart is not None
+            and not monthly_expense_df.empty
+        ):
+            col_1, col_2 = st.columns([0.4, 0.6])
+            with col_1:
+                st.plotly_chart(expense_pie)
+            with col_2:
+                st.plotly_chart(line_chart)
 
-        sum_month_expense_df = (
-            monthly_expense_df.groupby("Date")["Amount ($)"]
-            .sum()
-            .reset_index()
-            .sort_values(by="Date", key=lambda x: [MONTHS_MAP[m] for m in x])
-        ).reset_index(drop=True)
-        st.dataframe(
-            sum_month_expense_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Amount ($)": st.column_config.NumberColumn(
-                    "Amount ($)", format="$%.2f"
-                )
-            },
-        )
+            sum_month_expense_df = (
+                monthly_expense_df.groupby("Date")["Amount ($)"]
+                .sum()
+                .reset_index()
+                .sort_values(by="Date", key=lambda x: [MONTHS_MAP[m] for m in x])
+            ).reset_index(drop=True)
+            st.dataframe(
+                sum_month_expense_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Amount ($)": st.column_config.NumberColumn(
+                        "Amount ($)", format="$%.2f"
+                    )
+                },
+            )
 
 
 dashboard()

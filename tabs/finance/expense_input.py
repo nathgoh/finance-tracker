@@ -58,7 +58,7 @@ def add_expense(
     """
     Adds a new expense to the session state.
 
-    Parameters:
+    Args:
         amount (float): The expense amount.
         category (str): The category for the expense.
         date (DateWidgetReturn): The date of the expense.
@@ -232,7 +232,7 @@ def get_monthly_breakdown():
         expense_df["date"] = pd.to_datetime(expense_df["date"])
         expense_df["month"] = expense_df["date"].dt.month_name()
         expense_df["year"] = expense_df["date"].dt.year
-
+  
         # Group by year and month and calculate summaries
         monthly_breakdown = (
             expense_df.groupby(["year", "month"])

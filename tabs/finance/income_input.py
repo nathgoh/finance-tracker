@@ -42,7 +42,7 @@ def add_income(amount: float, date: DateWidgetReturn, source: str):
     """
     Adds a new income to the session state.
 
-    Parameters:
+    Args:
         amount (float): The income amount.
         date (datetime): The date of the income.
         source (str): Source of the income.
