@@ -7,6 +7,8 @@ from sqlalchemy import (
     inspect,
 )
 
+from resources.constants import DB_FILE
+
 
 def get_database_path(db_file_name: str) -> str:
     """
@@ -50,9 +52,9 @@ def get_db_connection(db_file_name: str) -> sqlite3.Connection:
         raise e
 
 
-def inspect_table_in_db(db_file_name: str, table_name: str):
+def get_table_schema(db_file_name: str, table_name: str):
     """
-    Inspect a table in a database to get column information
+    Inspect a table in a database to the table schema
 
     Args:
         db_file_name (str): file name where database lives
@@ -68,7 +70,7 @@ def inspect_table_in_db(db_file_name: str, table_name: str):
         (col["name"], col["type"]) for col in inspector.get_columns(table_name)
     ]
 
-    table_description = "Columns:\n" + "\n".join(
+    table_description = f"SQLite Table Schema for {table_name}:\n" + "\n".join(
         [f"  - {name}: {col_type}" for name, col_type in columns_info]
     )
     return table_description
@@ -81,7 +83,7 @@ def init_database():
     Note dates as stored as strings: ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS")
     """
 
-    conn = get_db_connection("finance_tracker.db")
+    conn = get_db_connection(DB_FILE)
     cursor = conn.cursor()
 
     # Create categories table

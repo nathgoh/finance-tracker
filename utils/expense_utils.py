@@ -12,13 +12,13 @@ def get_expenses_df(year: None | str = None) -> pd.DataFrame:
 
     Args:
         year (None | str, optional): Filter expenses by year. Defaults to None.
-    
+
     Returns a DataFrame containing all expenses from the database.
     """
 
     conn = get_db_connection(DB_FILE)
 
-    sql_str = f"""
+    sql_str = """
         SELECT id, amount, category, date, notes
         FROM expenses
     """
@@ -80,11 +80,11 @@ def save_expense_data():
 def delete_expense_data(expense_ids: list):
     """
     Delete expenses from the database based on their primary key values.
-    
+
     Args:
         expense_ids (list): List of expense ids to be deleted
     """
-    
+
     conn = get_db_connection(DB_FILE)
     if expense_ids:
         try:
@@ -108,7 +108,7 @@ def manage_categories_data(
 ):
     """
     Manages the categories of expenses.
-    
+
     Args:
         new_category (str | None): Potential new category to add.
         delete_category (str | None): Potential category to delete.

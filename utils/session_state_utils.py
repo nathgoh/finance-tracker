@@ -2,6 +2,7 @@ import sqlite3
 import streamlit as st
 
 from .db_utils import get_database_path
+from resources.constants import DB_FILE
 
 
 def init_expense_session_state():
@@ -13,7 +14,7 @@ def init_expense_session_state():
         st.session_state.expenses = []
     if "categories" not in st.session_state:
         # Load categories from SQLite database
-        conn = sqlite3.connect(get_database_path("finance_tracker.db"))
+        conn = sqlite3.connect(get_database_path(DB_FILE))
         cursor = conn.cursor()
 
         # Get categories from database

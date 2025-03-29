@@ -1,6 +1,7 @@
 DB_FILE = "finance_tracker.db"
 
 OLLAMA_ENDPOINT = "http://gohcloud.local:11434"
+OLLAMA_OPENAI_ENDPOINT = "http://gohcloud.local:11434/v1"
 
 MONTHS_MAP = {
     "January": 1,

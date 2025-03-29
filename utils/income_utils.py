@@ -15,7 +15,7 @@ def get_incomes_df(date=str(datetime.now().year)) -> pd.DataFrame:
     Returns a DataFrame containing all incomes from the database.
     """
 
-    conn = get_db_connection("finance_tracker.db")
+    conn = get_db_connection(DB_FILE)
     return pd.read_sql_query(
         f"""SELECT id, amount, date, source FROM incomes WHERE date LIKE '{date}%'""",
         conn,
