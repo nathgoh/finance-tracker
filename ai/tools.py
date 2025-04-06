@@ -1,5 +1,6 @@
-from smolagents import Tool
+from smolagents import Tool, tool
 from sqlalchemy import create_engine, text
+from datetime import datetime
 
 from resources.constants import DB_FILE
 from utils.db_utils import get_database_path
@@ -39,3 +40,14 @@ class SQLQueryTool(Tool):
             output = "No results found. Please try another query."
 
         return output
+
+@tool
+def current_year() -> int:
+    """
+    Returns the current year.
+
+    Returns:
+        int: year
+    """
+    
+    return datetime.today().year

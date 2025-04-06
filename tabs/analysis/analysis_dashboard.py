@@ -1,7 +1,5 @@
 import streamlit as st
 
-from resources.constants import DB_FILE
-from utils.db_utils import get_table_schema
 from tabs.analysis.analysis_agents import expense_agent
 
 st.title("Financial Analysis")
@@ -9,47 +7,37 @@ st.title("Financial Analysis")
 model = st.selectbox(
     "Select a model",
     [
-        "llama3.2:3b-instruct-q8_0",
-        "hengwen/watt-tool-8B",
-        "llama3-groq-tool-use:8b",
-        "gemini 2.0 flash lite",
+        "Llama 3.2:3B",
+        "Phi 4:14B",
+        "Gemini 2.0 Flash Lite",
     ],
 )
 
-e = expense_agent(model)
-st.write(get_table_schema(DB_FILE, "expenses"))
+expense_agent = expense_agent(model)
 
-if st.button("run"):
-    st.write(
-        e.run(
-            (
-                """
-                You are a financial analysis assistant designed to help users manage their personal finances 
-                by analyzing their income and expenses. Your goal is to provide insights into spending habits, 
-                track income sources, and suggest ways to optimize budgeting. You should be able to identify 
-                trends, and generate summary reports or visualizations. Ensure your responses are data-driven 
-                and practical, helping users make informed financial decisions. Prioritize accuracy, efficiency, 
-                and user privacy in all interactions"
-                                
-                Answer the following user query:
-                "What was the total expense for this year 2025 for the month of January?"
-                """
-            )
-        )
-    )
+with st.form("financial_analysis"):
+    st.write("Financial Analysis")
+    user_query = st.text_input("User query")
+    submit = st.form_submit_button("Submit")
 
-# if "messages" not in st.session_state:
-#     st.session_state.messages = []
-
-# for message in st.session_state.messages:
-#     with st.chat_message(message["role"]):
-#         st.markdown(message["content"])
-
-# if prompt := st.chat_input("What is up?"):
-#     st.session_state.messages.append({"role": "user", "content": prompt})
-#     with st.chat_message("user"):
-#         st.markdown(prompt)
-
-#     with st.chat_message("assistant"):
-#         response = st.write_stream(stream_llm_output(model, prompt))
-#     st.session_state.messages.append({"role": "assistant", "content": response})
+prompt = f"""
+    Role:
+    You are an expert Financial Analysis Assistant specializing in personal finance management. 
+    Your primary objective is to help users analyze their income, expenses, and overall financial health 
+    with precision and actionable insights. Assume if there's no year given, that the user wants 
+    financial analysis for the current year.
+    
+    Key Responsibilities:
+        Analyze Spending Habits: Identify patterns in expenditures (e.g., recurring subscriptions, discretionary spending, essential costs).
+        Track Income Sources: Categorize and monitor earnings (salary, investments, side gigs, etc.).
+        Budget Optimization: Provide tailored recommendations to reduce unnecessary expenses and improve savings.
+        Trend Identification: Detect long-term financial trends (e.g., increasing debt, seasonal spending spikes).
+        Report Generation: Create concise summaries with key metrics (e.g., net income, savings rate, debt-to-income ratio).
+                    
+    Answer the following user query:
+    {user_query}
+"""
+if submit:
+    with st.spinner("Expense Agent is analyzing your query...", show_time=True):
+        results = expense_agent.run(prompt)
+    st.write(results)
