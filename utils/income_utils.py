@@ -7,7 +7,7 @@ from datetime import datetime
 from utils.db_utils import get_db_connection
 from resources.constants import DB_FILE
 
-
+@st.cache_data(ttl=3600)
 def get_incomes_df(date=str(datetime.now().year)) -> pd.DataFrame:
     """
     Gets a DataFrame of incomes from the database and session state.

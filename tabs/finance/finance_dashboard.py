@@ -11,7 +11,7 @@ income_df = get_incomes_df()
 
 st.title("Finance Dashboard")
 
-
+@st.cache_data(ttl=3600)
 def expense_figures(year: str) -> tuple:
     """
     Expense figures and graphs to visually give a breakdown of your expenses.
@@ -41,7 +41,7 @@ def expense_figures(year: str) -> tuple:
 
         # Group by category and sum the amounts
         grouped_expense_df = (
-            reformatted_expense_df.groupby("Category")["Amount ($)"].sum().reset_index()
+            reformatted_expense_df.groupby("Category")["Amount ($)"].sum().reset_index().round(2)
         )
         total_expense = grouped_expense_df["Amount ($)"].sum()
         grouped_expense_df["Percentage"] = (
