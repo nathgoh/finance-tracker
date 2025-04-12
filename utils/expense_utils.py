@@ -5,7 +5,7 @@ import streamlit as st
 from utils.db_utils import get_db_connection
 from resources.constants import DB_FILE
 
-@st.cache_data(ttl=3600)
+
 def get_expenses_df(year: None | str = None) -> pd.DataFrame:
     """
     Gets a DataFrame of expenses from the database and session state.

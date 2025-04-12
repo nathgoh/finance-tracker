@@ -41,6 +41,7 @@ class SQLQueryTool(Tool):
 
         return output
 
+
 @tool
 def current_year() -> int:
     """
@@ -49,5 +50,5 @@ def current_year() -> int:
     Returns:
         int: year
     """
-    
+
     return datetime.today().year

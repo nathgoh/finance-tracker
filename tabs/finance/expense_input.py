@@ -219,6 +219,7 @@ def manage_categories():
                         else:
                             st.error("Cannot delete last category!")
 
+
 def get_monthly_breakdown():
     """
     Gets a DataFrame with monthly breakdown of expenses.
@@ -238,20 +239,16 @@ def get_monthly_breakdown():
 
         # Group by year and month and calculate summaries
         monthly_rent = (
-            rent_df.groupby(["year", "month"])
-            .agg({"amount": "sum"})
-            .round(2)
+            rent_df.groupby(["year", "month"]).agg({"amount": "sum"}).round(2)
         )
         monthly_rent.columns = ["Rent ($)"]
 
         # Group by year and month and calculate summaries
         monthly_non_rent = (
-            non_rent_df.groupby(["year", "month"])
-            .agg({"amount": "sum"})
-            .round(2)
+            non_rent_df.groupby(["year", "month"]).agg({"amount": "sum"}).round(2)
         )
         monthly_non_rent.columns = ["Total Non-Rent ($)"]
-        
+
         monthly_breakdown = pd.concat([monthly_rent, monthly_non_rent], axis=1)
         monthly_breakdown = monthly_breakdown.fillna(0)
         monthly_breakdown.sort_index(ascending=[False, False], inplace=True)
@@ -279,9 +276,11 @@ def get_monthly_breakdown():
                 month_expense_df = get_expenses_df(
                     f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
                 )
-                
+
                 category_breakdown = (
-                    month_expense_df.groupby("category")["amount"].sum().reset_index()
+                    month_expense_df.groupby("category")["amount"]
+                    .sum()
+                    .reset_index()
                     .round(2)
                 )
                 category_breakdown[""] = ""
@@ -293,19 +292,20 @@ def get_monthly_breakdown():
                         data_frame=category_breakdown,
                         x="amount",
                         y="",
-                        title=f"Spending by Category",
+                        title="Spending by Category",
                         color="category",
                         orientation="h",
                         text="amount",
                         labels={"amount": "Amount ($)", "category": "Category"},
-                        custom_data=["category", "amount"]
-                    )  
+                        custom_data=["category", "amount"],
+                    )
                     category_bar.update_layout(barmode="stack", height=300)
-                    category_bar.update_traces(texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}")
+                    category_bar.update_traces(
+                        texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}"
+                    )
                     category_bar.update_layout(showlegend=False)
                     st.plotly_chart(category_bar, use_container_width=True)
 
-                
                 st.data_editor(
                     month_expense_df,
                     key="edited_month_expense",

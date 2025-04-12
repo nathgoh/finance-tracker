@@ -56,6 +56,7 @@ def add_income(amount: float, date: DateWidgetReturn, source: str):
     st.session_state.incomes.append(income)
     save_income_data()
 
+
 def get_monthly_breakdown():
     """
     Gets a DataFrame with monthly breakdown of incomes.
