@@ -65,6 +65,7 @@ def expense_figures(year: str) -> tuple:
         )
         expense_bar.update_layout(barmode="stack", height=300)
         expense_bar.update_traces(
+            texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}",
             hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>"
         )
 

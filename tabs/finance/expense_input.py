@@ -283,9 +283,9 @@ def get_monthly_breakdown():
                     .reset_index()
                     .round(2)
                 )
+                category_breakdown = category_breakdown[category_breakdown["category"] != "Rent"]
                 category_breakdown[""] = ""
 
-                st.write(category_breakdown)
                 # Create a bar chart of category totals
                 if not category_breakdown.empty:
                     category_bar = px.bar(
@@ -301,7 +301,8 @@ def get_monthly_breakdown():
                     )
                     category_bar.update_layout(barmode="stack", height=300)
                     category_bar.update_traces(
-                        texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}"
+                        texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}",
+                        hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<extra></extra>"
                     )
                     category_bar.update_layout(showlegend=False)
                     st.plotly_chart(category_bar, use_container_width=True)
