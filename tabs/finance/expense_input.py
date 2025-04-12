@@ -15,7 +15,7 @@ from utils.expense_utils import (
     manage_categories_data,
 )
 from utils.session_state_utils import init_expense_session_state
-from resources.constants import MONTHS_MAP
+from resources.constants import MONTHS_MAP, CATEGORY_COLORS
 
 
 def expense_form():
@@ -283,7 +283,9 @@ def get_monthly_breakdown():
                     .reset_index()
                     .round(2)
                 )
-                category_breakdown = category_breakdown[category_breakdown["category"] != "Rent"]
+                category_breakdown = category_breakdown[
+                    category_breakdown["category"] != "Rent"
+                ]
                 category_breakdown[""] = ""
 
                 # Create a bar chart of category totals
@@ -298,13 +300,23 @@ def get_monthly_breakdown():
                         text="amount",
                         labels={"amount": "Amount ($)", "category": "Category"},
                         custom_data=["category", "amount"],
+                        color_discrete_map=CATEGORY_COLORS,
                     )
-                    category_bar.update_layout(barmode="stack", height=300)
+                    category_bar.update_layout(
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=-0.3,
+                            xanchor="center",
+                            x=0.5,
+                        ),
+                        barmode="stack",
+                        height=300,
+                    )
                     category_bar.update_traces(
-                        texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}",
-                        hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<extra></extra>"
+                        texttemplate="<b>$%{customdata[1]}",
+                        hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<extra></extra>",
                     )
-                    category_bar.update_layout(showlegend=False)
                     st.plotly_chart(category_bar, use_container_width=True)
 
                 st.data_editor(

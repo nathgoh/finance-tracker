@@ -5,7 +5,7 @@ import pandas as pd
 from utils.db_utils import get_db_connection
 from utils.expense_utils import get_expenses_df
 from utils.income_utils import get_incomes_df
-from resources.constants import DB_FILE, MONTHS_MAP
+from resources.constants import DB_FILE, MONTHS_MAP, CATEGORY_COLORS
 
 income_df = get_incomes_df()
 
@@ -62,11 +62,22 @@ def expense_figures(year: str) -> tuple:
             text="Amount ($)",
             title="Expense Breakdown by Category",
             custom_data=["Category", "Amount ($)", "Percentage"],
+            color_discrete_map=CATEGORY_COLORS,
         )
-        expense_bar.update_layout(barmode="stack", height=300)
+        expense_bar.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.3,
+                xanchor="center",
+                x=0.5,
+            ),
+            barmode="stack",
+            height=300,
+        )
         expense_bar.update_traces(
-            texttemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}",
-            hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>"
+            texttemplate="<b>$%{customdata[1]}<br><b>%{customdata[2]:.2f}%",
+            hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>",
         )
 
         # Line chart showing expense per category over each month
