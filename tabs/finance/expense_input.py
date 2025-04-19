@@ -306,7 +306,7 @@ def get_monthly_breakdown():
                         legend=dict(
                             orientation="h",
                             yanchor="bottom",
-                            y=-0.3,
+                            y=-0.7,
                             xanchor="center",
                             x=0.5,
                         ),

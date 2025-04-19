@@ -17,7 +17,7 @@ expense_agent = expense_agent(model)
 
 with st.form("financial_analysis"):
     st.write("Financial Analysis")
-    user_query = st.text_input("User query")
+    user_query = st.text_area("User query")
     submit = st.form_submit_button("Submit")
 
 prompt = f"""
