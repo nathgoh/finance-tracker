@@ -79,7 +79,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>",
     )
 
-    # Function to calculate the monthly breakdown for total expense or incomes
+    # Function to calculate the monthly breakdown (i.e. total amount for each category) for total expense or incomes
     def monthly_total_breakdown(monthly_df, finance_chart, color, name):
         sum_month_df = (
             monthly_df.groupby("Date")["Amount ($)"]
@@ -126,6 +126,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         monthly_expense_df, finance_chart, "grey", "Expense"
     )
 
+    # Add income to finance chart
     reformatted_income_df = pd.DataFrame(
         {
             "Source": income_df.source.tolist(),
@@ -145,18 +146,22 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         monthly_income_df, finance_chart, "lightslategrey", "Income"
     )
 
+    # Total monthly expense
     sum_month_expense_df = sum_month_expense_df.rename(
         columns={"Amount ($)": "Expense Amount ($)"}
     )
+    
+    # Total monthly income
     sum_month_income_df = sum_month_income_df.rename(
         columns={"Amount ($)": "Income Amount ($)"}
     )
 
+    # Total monthly expense and income
     sum_month_finance_df = pd.merge(
         sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
     )
 
-    return expense_bar, finance_chart, monthly_expense_df, sum_month_finance_df
+    return expense_bar, finance_chart, sum_month_finance_df
 
 
 def dashboard():
@@ -175,51 +180,55 @@ def dashboard():
         expense_df = get_expenses_df(year_select)
         income_df = get_incomes_df(year_select)
 
+        # Total expenses & incomes
         total_expense = expense_df.amount.sum()
         total_income = income_df.amount.sum()
+        total_savings = total_income - total_expense
+        total_expense_no_rent = expense_df[expense_df["category"].str.lower() != "rent"].amount.sum()
 
         # Breakdown of total expense, income and savings
         expense, income, savings = st.columns(3)
         expense.metric(label="Total Expense", value=f"{total_expense.round(2)}$", border=True)
         income.metric(label="Total Income", value=f"{total_income.round(2)}$", border=True)
         savings.metric(
-            label="Total Savings", value=f"{(total_income - total_expense).round(2)}$", border=True
+            label="Total Savings", value=f"{total_savings.round(2)}$", border=True
         )
         
-        # Breakdown of average expense with/without rent, and percentage saved
-        avg_expense, avg_expense_no_rent, saved = st.columns(3)
-        avg_expense.metric(
-            label="Average Expense",
-            value=f"{(total_expense / len(expense_df)).round(2)}$",
-            border=True,
-            )
-        avg_expense_no_rent.metric(
-            label="Average Expense (No Rent)",
-            value=f"{(total_expense / len(expense_df[expense_df['category'].str.lower() != 'rent'])).round(2)}$",
-            border=True,
-        )
-        saved.metric(
-            label="% Saved",
-            value=f"{((total_income - total_expense) / total_income * 100).round(2)}%",
-            border=True,
-        )
-
         # Get finance figures/charts
-        expense_bar, finance_chart, monthly_expense_df, sum_month_expense_df = (
+        expense_bar, finance_chart, sum_month_finance_df = (
             finance_figures(income_df, expense_df)
         )
+
         if (
             expense_bar is not None
             and finance_chart is not None
-            and not monthly_expense_df.empty
         ):
+            
+            # Breakdown of average expense with/without rent per month, and percentage saved
+            avg_expense, avg_expense_no_rent, saved = st.columns(3)
+            avg_expense.metric(
+                label="Avg Expense / Month",
+                value=f"{(total_expense / len(sum_month_finance_df)).round(2)}$",
+                border=True,
+                )
+            avg_expense_no_rent.metric(
+                label="Avg Expense / Month (No Rent)",
+                value=f"{(total_expense_no_rent / len(sum_month_finance_df)).round(2)}$",
+                border=True,
+            )
+            saved.metric(
+                label="% Saved",
+                value=f"{(total_savings / total_income * 100).round(2)}%",
+                border=True,
+            )
+
             finance_chart.update_layout(
                 xaxis=dict(categoryorder="array", categoryarray=list(MONTHS_MAP.keys()))
             )
             st.plotly_chart(expense_bar)
             st.plotly_chart(finance_chart)
             st.dataframe(
-                sum_month_expense_df,
+                sum_month_finance_df,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
