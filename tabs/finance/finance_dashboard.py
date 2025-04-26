@@ -155,8 +155,6 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     sum_month_finance_df = pd.merge(
         sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
     )
-    # sum_month_finance_df['Date'] = pd.Categorical(sum_month_finance_df['Date'], categories=list(MONTHS_MAP.keys()), ordered=True)
-    # sum_month_finance_df = sum_month_finance_df.sort_values(by='Date')
 
     return expense_bar, finance_chart, monthly_expense_df, sum_month_finance_df
 
@@ -180,15 +178,29 @@ def dashboard():
         total_expense = expense_df.amount.sum()
         total_income = income_df.amount.sum()
 
-        # Breakdown of total income, saved, % of income saved
-        income, savings, saved = st.columns(3)
-        income.metric(label="Total Income", value=total_income, border=True)
+        # Breakdown of total expense, income and savings
+        expense, income, savings = st.columns(3)
+        expense.metric(label="Total Expense", value=f"{total_expense.round(2)}$", border=True)
+        income.metric(label="Total Income", value=f"{total_income.round(2)}$", border=True)
         savings.metric(
-            label="Total Savings", value=total_income - total_expense, border=True
+            label="Total Savings", value=f"{(total_income - total_expense).round(2)}$", border=True
+        )
+        
+        # Breakdown of average expense with/without rent, and percentage saved
+        avg_expense, avg_expense_no_rent, saved = st.columns(3)
+        avg_expense.metric(
+            label="Average Expense",
+            value=f"{(total_expense / len(expense_df)).round(2)}$",
+            border=True,
+            )
+        avg_expense_no_rent.metric(
+            label="Average Expense (No Rent)",
+            value=f"{(total_expense / len(expense_df[expense_df['category'].str.lower() != 'rent'])).round(2)}$",
+            border=True,
         )
         saved.metric(
             label="% Saved",
-            value=f"{((total_income - total_expense) / total_income * 100).round(2)} %",
+            value=f"{((total_income - total_expense) / total_income * 100).round(2)}%",
             border=True,
         )
 
