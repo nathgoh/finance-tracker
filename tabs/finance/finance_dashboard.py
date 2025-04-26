@@ -11,27 +11,25 @@ from resources.constants import DB_FILE, MONTHS_MAP, CATEGORY_COLORS
 st.title("Finance Dashboard")
 
 
-def finance_figures(year: str) -> tuple:
+def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     """
     Finance figures and graphs to visually give a breakdown of your expenses and incomes.
 
     Args:
-        year (str): year of finances to breakdown
+        income_df (pd.DataFrame): Income dataframe for a given year
+        expense_df (pd.DataFrame): Expense dataframe for a given year
+
     Returns:
         tuple: figures and dataframes giving us the financial breakdown
     """
 
-    # Expense dataframe, reformat to have better looking labels
-    expense_df = get_expenses_df(year)
-    income_df = get_incomes_df(year)
-     
     expense_bar, finance_chart, monthly_expense_df, sum_month_expense_df = (
         None,
         None,
         pd.DataFrame(),
         pd.DataFrame(),
-    ) 
-    
+    )
+
     reformatted_expense_df = pd.DataFrame(
         {
             "Category": expense_df.category.tolist(),
@@ -81,16 +79,20 @@ def finance_figures(year: str) -> tuple:
         hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>",
     )
 
-    # Function to calculate the monthly breakdown for total expense or incomes 
-    def monthly_total_breakdown(monthly_df, finance_chart, color, name):  
+    # Function to calculate the monthly breakdown for total expense or incomes
+    def monthly_total_breakdown(monthly_df, finance_chart, color, name):
         sum_month_df = (
             monthly_df.groupby("Date")["Amount ($)"]
             .sum()
             .reset_index()
             .sort_values(by="Date", key=lambda x: [MONTHS_MAP[m] for m in x])
         ).reset_index(drop=True)
-        
-        # Bar chart showing total income per month
+        sum_month_df["Date"] = pd.Categorical(
+            sum_month_df["Date"], categories=list(MONTHS_MAP.keys()), ordered=True
+        )
+        sum_month_df = sum_month_df.sort_values(by="Date")
+
+        # Bar chart showing total expense/income per month
         finance_chart.add_bar(
             x=sum_month_df["Date"],
             y=sum_month_df["Amount ($)"],
@@ -99,16 +101,16 @@ def finance_figures(year: str) -> tuple:
             hovertemplate="<b>Date:</b> %{x}<br><b>Amount:</b> $%{y:.2f}<extra></extra>",
         )
         return finance_chart, sum_month_df
-    
+
     monthly_expense_df = (
-            reformatted_expense_df.groupby("Category")
-            .resample("ME")
-            .sum("Amount ($)")
-            .reset_index()
-            .set_index("Date")
-        )
+        reformatted_expense_df.groupby("Category")
+        .resample("ME")
+        .sum("Amount ($)")
+        .reset_index()
+        .set_index("Date")
+    )
     monthly_expense_df.index = monthly_expense_df.index.month_name()
-    
+
     # Line chart showing expense per category over each month
     finance_chart = px.line(
         monthly_expense_df,
@@ -118,10 +120,12 @@ def finance_figures(year: str) -> tuple:
         symbol="Category",
         color_discrete_map=CATEGORY_COLORS,
     )
-    
+
     # Bar chart showing total expense per month
-    finance_chart, sum_month_expense_df = monthly_total_breakdown(monthly_expense_df, finance_chart, "grey", "Expense")
-  
+    finance_chart, sum_month_expense_df = monthly_total_breakdown(
+        monthly_expense_df, finance_chart, "grey", "Expense"
+    )
+
     reformatted_income_df = pd.DataFrame(
         {
             "Source": income_df.source.tolist(),
@@ -130,20 +134,30 @@ def finance_figures(year: str) -> tuple:
         }
     ).set_index("Date")
     monthly_income_df = (
-            reformatted_income_df.groupby("Source")
-            .resample("ME")
-            .sum("Amount ($)")
-            .reset_index()
-            .set_index("Date")
-        )
+        reformatted_income_df.groupby("Source")
+        .resample("ME")
+        .sum("Amount ($)")
+        .reset_index()
+        .set_index("Date")
+    )
     monthly_income_df.index = monthly_income_df.index.month_name()
-    finance_chart, sum_month_income_df = monthly_total_breakdown(monthly_income_df, finance_chart, "lightslategrey", "Income")
-        
-    sum_month_expense_df = sum_month_expense_df.rename(columns={"Amount ($)": "Expense Amount ($)"})
-    sum_month_income_df = sum_month_income_df.rename(columns={"Amount ($)": "Income Amount ($)"})
-    
-    sum_month_finance_df = pd.merge(sum_month_expense_df, sum_month_income_df, on="Date", how="outer")
-    
+    finance_chart, sum_month_income_df = monthly_total_breakdown(
+        monthly_income_df, finance_chart, "lightslategrey", "Income"
+    )
+
+    sum_month_expense_df = sum_month_expense_df.rename(
+        columns={"Amount ($)": "Expense Amount ($)"}
+    )
+    sum_month_income_df = sum_month_income_df.rename(
+        columns={"Amount ($)": "Income Amount ($)"}
+    )
+
+    sum_month_finance_df = pd.merge(
+        sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
+    )
+    # sum_month_finance_df['Date'] = pd.Categorical(sum_month_finance_df['Date'], categories=list(MONTHS_MAP.keys()), ordered=True)
+    # sum_month_finance_df = sum_month_finance_df.sort_values(by='Date')
+
     return expense_bar, finance_chart, monthly_expense_df, sum_month_finance_df
 
 
@@ -159,15 +173,37 @@ def dashboard():
     years = sorted(pd.to_datetime(dates["date"]).dt.year.unique(), reverse=True)
     year_select = st.selectbox("Select Year", years, index=0)
     if year_select:
+        # Expense and income dataframes
+        expense_df = get_expenses_df(year_select)
+        income_df = get_incomes_df(year_select)
+
+        total_expense = expense_df.amount.sum()
+        total_income = income_df.amount.sum()
+
+        # Breakdown of total income, saved, % of income saved
+        income, savings, saved = st.columns(3)
+        income.metric(label="Total Income", value=total_income, border=True)
+        savings.metric(
+            label="Total Savings", value=total_income - total_expense, border=True
+        )
+        saved.metric(
+            label="% Saved",
+            value=f"{((total_income - total_expense) / total_income * 100).round(2)} %",
+            border=True,
+        )
+
         # Get finance figures/charts
         expense_bar, finance_chart, monthly_expense_df, sum_month_expense_df = (
-            finance_figures(year_select)
+            finance_figures(income_df, expense_df)
         )
         if (
             expense_bar is not None
             and finance_chart is not None
             and not monthly_expense_df.empty
         ):
+            finance_chart.update_layout(
+                xaxis=dict(categoryorder="array", categoryarray=list(MONTHS_MAP.keys()))
+            )
             st.plotly_chart(expense_bar)
             st.plotly_chart(finance_chart)
             st.dataframe(

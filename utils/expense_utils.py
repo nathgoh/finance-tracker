@@ -13,7 +13,8 @@ def get_expenses_df(year: None | str = None) -> pd.DataFrame:
     Args:
         year (None | str, optional): Filter expenses by year. Defaults to None.
 
-    Returns a DataFrame containing all expenses from the database.
+    Returns:
+        pd.DataFrame: DataFrame containing all expenses from the database.
     """
 
     conn = get_db_connection(DB_FILE)
