@@ -23,7 +23,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         tuple: figures and dataframes giving us the financial breakdown
     """
 
-    expense_bar, finance_chart, monthly_expense_df, sum_month_expense_df = (
+    category_expense_bar, finance_chart, monthly_expense_df, sum_month_expense_df = (
         None,
         None,
         pd.DataFrame(),
@@ -39,21 +39,21 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     ).set_index("Date")
 
     # Group by category and sum the amounts
-    grouped_expense_df = (
+    grouped_category_expense_df = (
         reformatted_expense_df.groupby("Category")["Amount ($)"]
         .sum()
         .reset_index()
         .round(2)
     )
-    total_expense = grouped_expense_df["Amount ($)"].sum()
-    grouped_expense_df["Percentage"] = (
-        grouped_expense_df["Amount ($)"] / total_expense
+    total_expense = grouped_category_expense_df["Amount ($)"].sum()
+    grouped_category_expense_df["Percentage"] = (
+        grouped_category_expense_df["Amount ($)"] / total_expense
     ) * 100
-    grouped_expense_df[""] = ""
+    grouped_category_expense_df[""] = ""
 
     # Stacked bar chart of total expense per category
-    expense_bar = px.bar(
-        data_frame=grouped_expense_df,
+    category_expense_bar = px.bar(
+        data_frame=grouped_category_expense_df,
         x="Amount ($)",
         y="",
         color="Category",
@@ -63,7 +63,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         custom_data=["Category", "Amount ($)", "Percentage"],
         color_discrete_map=CATEGORY_COLORS,
     )
-    expense_bar.update_layout(
+    category_expense_bar.update_layout(
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -74,7 +74,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         barmode="stack",
         height=300,
     )
-    expense_bar.update_traces(
+    category_expense_bar.update_traces(
         texttemplate="<b>$%{customdata[1]}<br><b>%{customdata[2]:.2f}%",
         hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>",
     )
@@ -161,7 +161,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
     )
 
-    return expense_bar, finance_chart, sum_month_finance_df
+    return category_expense_bar, finance_chart, sum_month_finance_df
 
 
 def dashboard():
@@ -195,12 +195,12 @@ def dashboard():
         )
         
         # Get finance figures/charts
-        expense_bar, finance_chart, sum_month_finance_df = (
+        category_expense_bar, finance_chart, sum_month_finance_df = (
             finance_figures(income_df, expense_df)
         )
 
         if (
-            expense_bar is not None
+            category_expense_bar is not None
             and finance_chart is not None
         ):
             
@@ -225,16 +225,56 @@ def dashboard():
             finance_chart.update_layout(
                 xaxis=dict(categoryorder="array", categoryarray=list(MONTHS_MAP.keys()))
             )
-            st.plotly_chart(expense_bar)
+            st.plotly_chart(category_expense_bar)
             st.plotly_chart(finance_chart)
+            
+            st.subheader("Monthly Averages by Category")
+            
+            # Calculate total expense per category and divide by the current month
+            expense_df["date"] = pd.to_datetime(expense_df["date"])
+            current_month = expense_df["date"].dt.month.max()
+            monthly_avg_df = (
+                expense_df.groupby("category")["amount"]
+                .sum()
+                .div(current_month)
+                .round(2)
+                .reset_index()
+                .rename(columns={"amount": "Monthly Average ($)"})
+                .sort_values("Monthly Average ($)", ascending=False)
+            )
+            
+            selected_category = st.selectbox(
+                "Select a category to see monthly average:",
+                ["All Categories"] + monthly_avg_df["category"].tolist()
+            )
+            
+            if selected_category != "All Categories":
+                monthly_avg_df = monthly_avg_df[monthly_avg_df["category"] == selected_category]
+            st.dataframe(
+                monthly_avg_df,
+                column_config={
+                    "category": "Category",
+                    "Monthly Average ($)": st.column_config.NumberColumn(
+                        "Monthly Average ($)",
+                        format="$%.2f"
+                    )
+                },
+                hide_index=True,
+                use_container_width=True
+            )
+            
+            st.subheader("Monthly Finance Breakdown")
             st.dataframe(
                 sum_month_finance_df,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Amount ($)": st.column_config.NumberColumn(
-                        "Amount ($)", format="$%.2f"
-                    )
+                    "Expense Amount ($)": st.column_config.NumberColumn(
+                        "Expense Amount ($)", format="$%.2f"
+                    ),
+                    "Income Amount ($)": st.column_config.NumberColumn(
+                        "Income Amount ($)", format="$%.2f"
+                    ),
                 },
             )
 

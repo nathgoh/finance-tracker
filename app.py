@@ -22,10 +22,6 @@ income_input = st.Page(
 analysis_dashboard = st.Page(
     "tabs/analysis/analysis_dashboard.py", title="Analysis", icon=":material/insights:"
 )
-trading_dashboard = st.Page(
-    "tabs/trading/trading_dashboard.py", title="Trading", icon=":material/trending_up:"
-)
-
 
 pages = st.navigation(
     {
@@ -35,7 +31,6 @@ pages = st.navigation(
             expense_input,
             income_input,
         ],
-        "Trading": [trading_dashboard],
     }
 )
 pages.run()
