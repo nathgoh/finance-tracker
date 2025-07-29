@@ -126,35 +126,37 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     )
 
     # Add income to finance chart
-    reformatted_income_df = pd.DataFrame(
-        {
-            "Source": income_df.source.tolist(),
-            "Amount ($)": income_df.amount.tolist(),
-            "Date": pd.to_datetime([date for date in income_df.date.tolist()]),
-        }
-    ).set_index("Date")
-    monthly_income_df = (
-        reformatted_income_df.groupby("Source")
-        .resample("ME")
-        .sum("Amount ($)")
-        .reset_index()
-        .set_index("Date")
-    )
-    monthly_income_df.index = monthly_income_df.index.month_name()
-    finance_chart, sum_month_income_df = monthly_total_breakdown(
-        monthly_income_df, finance_chart, "lightslategrey", "Income"
-    )
+    sum_month_income_df = pd.DataFrame(columns=["Date", "Income Amount ($)"])
+    if not income_df.empty:
+        reformatted_income_df = pd.DataFrame(
+            {
+                "Source": income_df.source.tolist(),
+                "Amount ($)": income_df.amount.tolist(),
+                "Date": pd.to_datetime([date for date in income_df.date.tolist()]),
+            }
+        ).set_index("Date")
+        monthly_income_df = (
+            reformatted_income_df.groupby("Source")
+            .resample("ME")
+            .sum("Amount ($)")
+            .reset_index()
+            .set_index("Date")
+        )
+        monthly_income_df.index = monthly_income_df.index.month_name()
+        finance_chart, sum_month_income_df = monthly_total_breakdown(
+            monthly_income_df, finance_chart, "lightslategrey", "Income"
+        )
+
+         # Total monthly income
+        sum_month_income_df = sum_month_income_df.rename(
+            columns={"Amount ($)": "Income Amount ($)"}
+        )
 
     # Total monthly expense
     sum_month_expense_df = sum_month_expense_df.rename(
         columns={"Amount ($)": "Expense Amount ($)"}
     )
     
-    # Total monthly income
-    sum_month_income_df = sum_month_income_df.rename(
-        columns={"Amount ($)": "Income Amount ($)"}
-    )
-
     # Total monthly expense and income
     sum_month_finance_df = pd.merge(
         sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
@@ -187,10 +189,10 @@ def dashboard():
 
         # Breakdown of total expense, income and savings
         expense, income, savings = st.columns(3)
-        expense.metric(label="Total Expense", value=f"{total_expense.round(2)}$", border=True)
-        income.metric(label="Total Income", value=f"{total_income.round(2)}$", border=True)
+        expense.metric(label="Total Expense", value=f"{float(total_expense):.2f}$", border=True)
+        income.metric(label="Total Income", value=f"{float(total_income):.2f}$", border=True)
         savings.metric(
-            label="Total Savings", value=f"{total_savings.round(2)}$", border=True
+            label="Total Savings", value=f"{float(total_savings):.2f}$", border=True
         )
         
         # Get finance figures/charts and data
