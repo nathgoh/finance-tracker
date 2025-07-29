@@ -7,7 +7,6 @@ from utils.expense_utils import get_expenses_df
 from utils.income_utils import get_incomes_df
 from resources.constants import DB_FILE, MONTHS_MAP, CATEGORY_COLORS
 
-
 st.title("Finance Dashboard")
 
 
@@ -161,7 +160,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         sum_month_expense_df, sum_month_income_df, on="Date", how="outer"
     )
 
-    return category_expense_bar, finance_chart, sum_month_finance_df
+    return category_expense_bar, finance_chart, sum_month_finance_df, expense_df, income_df
 
 
 def dashboard():
@@ -194,9 +193,38 @@ def dashboard():
             label="Total Savings", value=f"{total_savings.round(2)}$", border=True
         )
         
-        # Get finance figures/charts
-        category_expense_bar, finance_chart, sum_month_finance_df = (
+        # Get finance figures/charts and data
+        category_expense_bar, finance_chart, sum_month_finance_df, expense_data, income_data = (
             finance_figures(income_df, expense_df)
+        )
+        
+        # Download Expense CSV
+        expense_data['date'] = pd.to_datetime(expense_data['date'])
+        expense_csv = expense_data[expense_data['date'].dt.year == year_select].assign(Type='Expense').rename(
+            columns={
+                'category': 'Category',
+                'amount': 'Amount',
+                'date': 'Date',
+                'notes': 'Notes'
+            }
+        )[['Type', 'Category', 'Amount', 'Date', 'Notes']].to_csv(index=False)
+        st.sidebar.download_button(
+            label="📥 Export Expense Data as CSV",
+            data=expense_csv,
+            file_name=f'expense_data_{year_select}.csv',
+            mime='text/csv',
+            help='Download all expense data as a CSV file'
+        )
+
+        # Download Income CSV
+        income_data['date'] = pd.to_datetime(income_data['date'])
+        income_csv = income_data[income_data['date'].dt.year == year_select].assign(Type='Income').rename(columns={'source': 'Source', 'amount': 'Amount', 'date': 'Date'})[['Type', 'Source', 'Amount', 'Date']].to_csv(index=False)
+        st.sidebar.download_button(
+            label="📥 Export Income Data as CSV",
+            data=income_csv,
+            file_name=f'income_data_{year_select}.csv',
+            mime='text/csv',
+            help='Download all income data as a CSV file'
         )
 
         if (
