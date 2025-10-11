@@ -7,8 +7,6 @@ st.title("Financial Analysis")
 model = st.selectbox(
     "Select a model",
     [
-        "Llama 3.2:3B",
-        "Phi 4:14B",
         "Gemini 2.0 Flash Lite",
     ],
 )
