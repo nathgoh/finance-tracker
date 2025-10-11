@@ -106,7 +106,7 @@ def get_monthly_breakdown():
 
                 month_income_df = get_incomes_df(
                     f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
-                )
+                ).sort_values("date").reset_index(drop=True)
                 st.data_editor(
                     month_income_df,
                     key="edited_month_income",

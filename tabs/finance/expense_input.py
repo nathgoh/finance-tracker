@@ -275,7 +275,7 @@ def get_monthly_breakdown():
 
                 month_expense_df = get_expenses_df(
                     f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
-                )
+                ).sort_values("date").reset_index(drop=True)
 
                 category_breakdown = (
                     month_expense_df.groupby("category")["amount"]
