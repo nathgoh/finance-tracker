@@ -55,40 +55,118 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         "Amount ($)", ascending=False
     ).reset_index(drop=True)
 
-    # Sankey diagram for expense breakdown by category
+    # Sankey diagram for full financial flow: Income → Expenses/Savings → Categories
     categories = grouped_category_expense_df["Category"].tolist()
     amounts = grouped_category_expense_df["Amount ($)"].tolist()
     percentages = grouped_category_expense_df["Percentage"].tolist()
 
-    # Node labels: first node is "Expenses", rest are categories with amounts
-    node_labels = [f"Expenses<br>${total_expense:,.2f}"]
-    node_colors = ["#808080"]  # Grey for total expenses
+    # Calculate total income and savings
+    total_income = income_df["amount"].sum() if not income_df.empty else 0
+    total_savings = total_income - total_expense
 
-    # Custom data for node hover: [category_name, amount, percentage, total]
-    node_customdata = [["Total Expenses", total_expense, 100.0, total_expense]]
+    # Helper function to convert hex to rgba
+    def hex_to_rgba(hex_color, alpha=0.6):
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        return f"rgba({r}, {g}, {b}, {alpha})"
 
+    # Build nodes and links for the Sankey diagram
+    node_labels = []
+    node_colors = []
+    node_customdata = []
+    sources = []
+    targets = []
+    link_values = []
+    link_colors_rgba = []
+    link_customdata = []
+
+    node_index = 0
+
+    # Add income source nodes if income data exists
+    if not income_df.empty and total_income > 0:
+        # Group income by source
+        grouped_income = income_df.groupby("source")["amount"].sum().reset_index()
+        income_sources = grouped_income["source"].tolist()
+        income_amounts = grouped_income["amount"].tolist()
+
+        # Add income source nodes
+        income_source_indices = []
+        for source, amt in zip(income_sources, income_amounts):
+            pct = (amt / total_income * 100) if total_income > 0 else 0
+            node_labels.append(f"{source}<br>${amt:,.2f}")
+            node_colors.append("#2E7D32")  # Green for income sources
+            node_customdata.append([source, amt, pct, total_income])
+            income_source_indices.append(node_index)
+            node_index += 1
+
+        # Add Total Income node
+        total_income_index = node_index
+        node_labels.append(f"Total Income<br>${total_income:,.2f}")
+        node_colors.append("#1B5E20")  # Dark green for total income
+        node_customdata.append(["Total Income", total_income, 100.0, total_income])
+        node_index += 1
+
+        # Links from income sources to Total Income
+        for idx, amt in zip(income_source_indices, income_amounts):
+            sources.append(idx)
+            targets.append(total_income_index)
+            link_values.append(amt)
+            link_colors_rgba.append(hex_to_rgba("#4CAF50"))
+            pct = (amt / total_income * 100) if total_income > 0 else 0
+            link_customdata.append([income_sources[income_source_indices.index(idx)], amt, pct])
+
+        # Add Expenses node
+        expenses_index = node_index
+        node_labels.append(f"Expenses<br>${total_expense:,.2f}")
+        node_colors.append("#808080")  # Grey for expenses
+        expense_pct = (total_expense / total_income * 100) if total_income > 0 else 100
+        node_customdata.append(["Total Expenses", total_expense, expense_pct, total_income])
+        node_index += 1
+
+        # Link from Total Income to Expenses
+        sources.append(total_income_index)
+        targets.append(expenses_index)
+        link_values.append(total_expense)
+        link_colors_rgba.append(hex_to_rgba("#808080"))
+        link_customdata.append(["Expenses", total_expense, expense_pct])
+
+        # Add Savings node if there are savings
+        if total_savings > 0:
+            savings_index = node_index
+            savings_pct = (total_savings / total_income * 100) if total_income > 0 else 0
+            node_labels.append(f"Savings<br>${total_savings:,.2f} ({savings_pct:.1f}%)")
+            node_colors.append("#1976D2")  # Blue for savings
+            node_customdata.append(["Savings", total_savings, savings_pct, total_income])
+            node_index += 1
+
+            # Link from Total Income to Savings
+            sources.append(total_income_index)
+            targets.append(savings_index)
+            link_values.append(total_savings)
+            link_colors_rgba.append(hex_to_rgba("#1976D2"))
+            link_customdata.append(["Savings", total_savings, savings_pct])
+
+    else:
+        # No income data - just show expenses node
+        expenses_index = node_index
+        node_labels.append(f"Expenses<br>${total_expense:,.2f}")
+        node_colors.append("#808080")
+        node_customdata.append(["Total Expenses", total_expense, 100.0, total_expense])
+        node_index += 1
+
+    # Add expense category nodes and links
     for cat, amt, pct in zip(categories, amounts, percentages):
         node_labels.append(f"{cat}<br>${amt:,.2f} ({pct:.1f}%)")
         node_colors.append(CATEGORY_COLORS.get(cat, "#888888"))
         node_customdata.append([cat, amt, pct, total_expense])
 
-    # Links: from "Expenses" (index 0) to each category (indices 1, 2, 3, ...)
-    sources = [0] * len(categories)
-    targets = list(range(1, len(categories) + 1))
-    link_colors = [CATEGORY_COLORS.get(cat, "#888888") for cat in categories]
-
-    # Custom data for link hover: [category, amount, percentage]
-    link_customdata = [
-        [cat, amt, pct] for cat, amt, pct in zip(categories, amounts, percentages)
-    ]
-
-    # Make link colors semi-transparent
-    link_colors_rgba = []
-    for color in link_colors:
-        # Convert hex to rgba with transparency
-        hex_color = color.lstrip('#')
-        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        link_colors_rgba.append(f"rgba({r}, {g}, {b}, 0.6)")
+        # Link from Expenses to category
+        sources.append(expenses_index)
+        targets.append(node_index)
+        link_values.append(amt)
+        link_colors_rgba.append(hex_to_rgba(CATEGORY_COLORS.get(cat, "#888888")))
+        link_customdata.append([cat, amt, pct])
+        node_index += 1
 
     category_expense_bar = go.Figure(data=[go.Sankey(
         node=dict(
@@ -108,22 +186,22 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         link=dict(
             source=sources,
             target=targets,
-            value=amounts,
+            value=link_values,
             color=link_colors_rgba,
             customdata=link_customdata,
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
-                "Spent: $%{customdata[1]:,.2f}<br>"
-                "% of Budget: %{customdata[2]:.1f}%"
+                "Amount: $%{customdata[1]:,.2f}<br>"
+                "% of Total: %{customdata[2]:.1f}%"
                 "<extra></extra>"
             ),
         ),
     )])
 
     category_expense_bar.update_layout(
-        title="Expense Breakdown by Category",
+        title="Financial Flow: Income → Expenses → Categories",
         font=dict(size=12),
-        height=450,
+        height=500,
     )
 
     # Function to calculate the monthly breakdown (i.e. total amount for each category) for total expense or incomes
