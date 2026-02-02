@@ -1,5 +1,6 @@
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 from utils.db_utils import get_db_connection
@@ -46,36 +47,83 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     )
     total_expense = grouped_category_expense_df["Amount ($)"].sum()
     grouped_category_expense_df["Percentage"] = (
-        grouped_category_expense_df["Amount ($)"] / total_expense
-    ) * 100
-    grouped_category_expense_df[""] = ""
+        (grouped_category_expense_df["Amount ($)"] / total_expense) * 100
+    ).round(2)
 
-    # Stacked bar chart of total expense per category
-    category_expense_bar = px.bar(
-        data_frame=grouped_category_expense_df,
-        x="Amount ($)",
-        y="",
-        color="Category",
-        orientation="h",
-        text="Amount ($)",
-        title="Expense Breakdown by Category",
-        custom_data=["Category", "Amount ($)", "Percentage"],
-        color_discrete_map=CATEGORY_COLORS,
-    )
-    category_expense_bar.update_layout(
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.7,
-            xanchor="center",
-            x=0.5,
+    # Sort by amount descending for better visualization
+    grouped_category_expense_df = grouped_category_expense_df.sort_values(
+        "Amount ($)", ascending=False
+    ).reset_index(drop=True)
+
+    # Sankey diagram for expense breakdown by category
+    categories = grouped_category_expense_df["Category"].tolist()
+    amounts = grouped_category_expense_df["Amount ($)"].tolist()
+    percentages = grouped_category_expense_df["Percentage"].tolist()
+
+    # Node labels: first node is "Expenses", rest are categories with amounts
+    node_labels = [f"Expenses<br>${total_expense:,.2f}"]
+    node_colors = ["#808080"]  # Grey for total expenses
+
+    # Custom data for node hover: [category_name, amount, percentage, total]
+    node_customdata = [["Total Expenses", total_expense, 100.0, total_expense]]
+
+    for cat, amt, pct in zip(categories, amounts, percentages):
+        node_labels.append(f"{cat}<br>${amt:,.2f} ({pct:.1f}%)")
+        node_colors.append(CATEGORY_COLORS.get(cat, "#888888"))
+        node_customdata.append([cat, amt, pct, total_expense])
+
+    # Links: from "Expenses" (index 0) to each category (indices 1, 2, 3, ...)
+    sources = [0] * len(categories)
+    targets = list(range(1, len(categories) + 1))
+    link_colors = [CATEGORY_COLORS.get(cat, "#888888") for cat in categories]
+
+    # Custom data for link hover: [category, amount, percentage]
+    link_customdata = [
+        [cat, amt, pct] for cat, amt, pct in zip(categories, amounts, percentages)
+    ]
+
+    # Make link colors semi-transparent
+    link_colors_rgba = []
+    for color in link_colors:
+        # Convert hex to rgba with transparency
+        hex_color = color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        link_colors_rgba.append(f"rgba({r}, {g}, {b}, 0.6)")
+
+    category_expense_bar = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=20,
+            thickness=30,
+            line=dict(color="white", width=1),
+            label=node_labels,
+            color=node_colors,
+            customdata=node_customdata,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Amount: $%{customdata[1]:,.2f}<br>"
+                "% of Total: %{customdata[2]:.1f}%"
+                "<extra></extra>"
+            ),
         ),
-        barmode="stack",
-        height=300,
-    )
-    category_expense_bar.update_traces(
-        texttemplate="<b>$%{customdata[1]}<br><b>%{customdata[2]:.2f}%",
-        hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<br>Percentage: %{customdata[2]:.2f}%<extra></extra>",
+        link=dict(
+            source=sources,
+            target=targets,
+            value=amounts,
+            color=link_colors_rgba,
+            customdata=link_customdata,
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Spent: $%{customdata[1]:,.2f}<br>"
+                "% of Budget: %{customdata[2]:.1f}%"
+                "<extra></extra>"
+            ),
+        ),
+    )])
+
+    category_expense_bar.update_layout(
+        title="Expense Breakdown by Category",
+        font=dict(size=12),
+        height=450,
     )
 
     # Function to calculate the monthly breakdown (i.e. total amount for each category) for total expense or incomes
