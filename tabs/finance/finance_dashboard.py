@@ -3,10 +3,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
-from utils.db_utils import get_db_connection
-from utils.expense_utils import get_expenses_df
+from utils.expense_utils import get_expenses_df, get_all_expense_dates
 from utils.income_utils import get_incomes_df
-from resources.constants import DB_FILE, MONTHS_MAP, CATEGORY_COLORS
+from resources.constants import MONTHS_MAP, CATEGORY_COLORS
 
 st.title("Finance Dashboard")
 
@@ -292,13 +291,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
 
 
 def dashboard():
-    conn = get_db_connection(DB_FILE)
-    sql_str = """
-        SELECT date
-        FROM expenses
-    """
-    dates = pd.read_sql_query(sql_str, conn)
-    conn.close()
+    dates = get_all_expense_dates()
 
     years = sorted(pd.to_datetime(dates["date"]).dt.year.unique(), reverse=True)
     year_select = st.selectbox("Select Year", years, index=0)
@@ -416,13 +409,11 @@ def dashboard():
                     )
                 },
                 hide_index=True,
-                use_container_width=True
             )
             
             st.subheader("Monthly Finance Breakdown")
             st.dataframe(
                 sum_month_finance_df,
-                use_container_width=True,
                 hide_index=True,
                 column_config={
                     "Expense Amount ($)": st.column_config.NumberColumn(

@@ -1,5 +1,3 @@
-DB_FILE = "finance_tracker.db"
-
 MONTHS_MAP = {
     "January": 1,
     "February": 2,

@@ -1,8 +1,8 @@
 import streamlit as st
 
-from utils.db_utils import init_database
+from utils.json_utils import init_data_files
 
-init_database()
+init_data_files()
 
 st.set_page_config(page_title="Finance App", page_icon="💵", layout="wide")
 

@@ -1,8 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from datetime import datetime
-from streamlit.elements.widgets.time_widgets import DateWidgetReturn
+from datetime import date, datetime
 
 from utils.income_utils import get_incomes_df, save_income_data, delete_income_data
 from utils.session_state_utils import init_income_session_state
@@ -38,7 +37,7 @@ def income_form():
             add_income(income, date, source)
 
 
-def add_income(amount: float, date: DateWidgetReturn, source: str):
+def add_income(amount: float, date: date, source: str):
     """
     Adds a new income to the session state.
 
@@ -111,7 +110,6 @@ def get_monthly_breakdown():
                     month_income_df,
                     key="edited_month_income",
                     num_rows="dynamic",
-                    use_container_width=True,
                     column_order=["date", "amount", "source"],
                     column_config={
                         "amount": st.column_config.NumberColumn(

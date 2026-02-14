@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 from time import sleep
 import plotly.express as px
@@ -6,8 +6,6 @@ import plotly.express as px
 import uuid
 import pandas as pd
 import streamlit as st
-from streamlit.elements.widgets.time_widgets import DateWidgetReturn
-
 from utils.expense_utils import (
     get_expenses_df,
     save_expense_data,
@@ -51,7 +49,7 @@ def expense_form():
 def add_expense(
     amount: float,
     category: str,
-    date: DateWidgetReturn,
+    date: date,
     notes: str,
     frequency: str | None,
     recurring_id: str | None,
@@ -62,7 +60,7 @@ def add_expense(
     Args:
         amount (float): The expense amount.
         category (str): The category for the expense.
-        date (DateWidgetReturn): The date of the expense.
+        date (date): The date of the expense.
         notes (str): Additional notes for the expense.
         frequency (str | None): The frequency if the expense is recurring, otherwise None.
         recurring_id (str | None): The recurring ID if the expense is recurring, otherwise None.
@@ -186,7 +184,7 @@ def manage_categories():
                 col_1, col_2 = st.columns([1, 1])
                 with col_1:
                     if st.button(
-                        "Update", key=f"update_{idx}", use_container_width=True
+                        "Update", key=f"update_{idx}", width="stretch"
                     ):
                         if new_category_name != category:
                             # Update category name in expenses
@@ -204,7 +202,7 @@ def manage_categories():
                             st.rerun()
                 with col_2:
                     if st.button(
-                        "Delete", key=f"delete_{idx}", use_container_width=True
+                        "Delete", key=f"delete_{idx}", width="stretch"
                     ):
                         if len(st.session_state.categories) > 1:
                             df = get_expenses_df()
@@ -317,13 +315,12 @@ def get_monthly_breakdown():
                         texttemplate="<b>$%{customdata[1]}",
                         hovertemplate="<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]}<extra></extra>",
                     )
-                    st.plotly_chart(category_bar, use_container_width=True)
+                    st.plotly_chart(category_bar)
 
                 st.data_editor(
                     month_expense_df,
                     key="edited_month_expense",
                     num_rows="dynamic",
-                    use_container_width=True,
                     column_order=["date", "category", "amount", "notes"],
                     column_config={
                         "amount": st.column_config.NumberColumn(

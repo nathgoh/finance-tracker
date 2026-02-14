@@ -1,66 +1,63 @@
 import pandas as pd
-import sqlite3
 import streamlit as st
 
 from datetime import datetime
 
-from utils.db_utils import get_db_connection
-from resources.constants import DB_FILE
+from utils.json_utils import read_json, write_json
 
 
 def get_incomes_df(date=str(datetime.now().year)) -> pd.DataFrame:
     """
-    Gets a DataFrame of incomes from the database and session state.
+    Gets a DataFrame of incomes from the JSON data store.
 
-    Returns a DataFrame containing all incomes from the database.
+    Returns a DataFrame containing incomes filtered by date prefix.
     """
 
-    conn = get_db_connection(DB_FILE)
-    return pd.read_sql_query(
-        f"""SELECT id, amount, date, source FROM incomes WHERE date LIKE '{date}%'""",
-        conn,
-    )
+    data = read_json("incomes.json")
+    df = pd.DataFrame(data["records"])
+
+    if df.empty:
+        return pd.DataFrame(columns=["id", "amount", "date", "source"])
+
+    df = df[df["date"].str.startswith(str(date))]
+    return df[["id", "amount", "date", "source"]]
 
 
 def save_income_data():
     """
-    Save income data to SQLite database
+    Save income data to the JSON data store.
     """
 
-    conn = get_db_connection(DB_FILE)
     try:
-        c = conn.cursor()
-
+        data = read_json("incomes.json")
         new_income = st.session_state.incomes[-1]
-        c.execute(
-            "INSERT INTO incomes (amount, date, source) VALUES (?, ?, ?)",
-            (new_income["Amount"], new_income["Date"], new_income["Source"]),
-        )
 
-        conn.commit()
-    except sqlite3.Error as e:
+        record = {
+            "id": data["next_id"],
+            "amount": new_income["Amount"],
+            "date": new_income["Date"],
+            "source": new_income["Source"],
+        }
+        data["records"].append(record)
+        data["next_id"] += 1
+        write_json("incomes.json", data)
+    except Exception as e:
         st.error(f"Failed to saving income input data: {e}")
-    finally:
-        conn.close()
 
 
 def delete_income_data(income_ids: list):
     """
-    Delete incomes from the database based on their primary key values.
+    Delete incomes from the data store based on their primary key values.
     """
-    conn = get_db_connection(DB_FILE)
-    if income_ids:
-        try:
-            c = conn.cursor()
-            c.execute(
-                f"""
-                DELETE FROM incomes
-                WHERE id {f"IN {tuple(income_ids)}" if len(income_ids) > 1 else f"= {income_ids[0]}"}
-                """
-            )
-            conn.commit()
-            st.success("Income(s) deleted successfully!")
-        except sqlite3.Error as e:
-            st.error(f"Failed to delete income data: {e}")
-        finally:
-            conn.close()
+
+    if not income_ids:
+        return
+
+    try:
+        data = read_json("incomes.json")
+        ids_set = set(income_ids)
+        data["records"] = [r for r in data["records"] if r["id"] not in ids_set]
+        write_json("incomes.json", data)
+        st.success("Income(s) deleted successfully!")
+    except Exception as e:
+        st.error(f"Failed to delete income data: {e}")

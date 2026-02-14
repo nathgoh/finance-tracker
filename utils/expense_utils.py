@@ -1,107 +1,101 @@
 import pandas as pd
-import sqlite3
 import streamlit as st
 
-from utils.db_utils import get_db_connection
-from resources.constants import DB_FILE
+from utils.json_utils import read_json, write_json
 
 
 def get_expenses_df(year: None | str = None) -> pd.DataFrame:
     """
-    Gets a DataFrame of expenses from the database and session state.
+    Gets a DataFrame of expenses from the JSON data store.
 
     Args:
         year (None | str, optional): Filter expenses by year. Defaults to None.
 
     Returns:
-        pd.DataFrame: DataFrame containing all expenses from the database.
+        pd.DataFrame: DataFrame containing expenses.
     """
 
-    conn = get_db_connection(DB_FILE)
+    data = read_json("expenses.json")
+    df = pd.DataFrame(data["records"])
 
-    sql_str = """
-        SELECT id, amount, category, date, notes
-        FROM expenses
+    if df.empty:
+        return pd.DataFrame(columns=["id", "amount", "category", "date", "notes"])
+
+    if year:
+        df = df[df["date"].str.startswith(str(year))]
+
+    return df[["id", "amount", "category", "date", "notes"]]
+
+
+def get_all_expense_dates() -> pd.DataFrame:
     """
-    sql_str += f"""WHERE date LIKE '{year}%'""" if year else ""
-    return pd.read_sql_query(sql_str, conn)
+    Gets a DataFrame of all expense dates.
+
+    Returns:
+        pd.DataFrame: DataFrame with a single 'date' column.
+    """
+
+    data = read_json("expenses.json")
+    df = pd.DataFrame(data["records"])
+
+    if df.empty:
+        return pd.DataFrame(columns=["date"])
+
+    return df[["date"]]
 
 
 def save_expense_data():
     """
-    Save expenses data to SQLite database
+    Save expenses data to the JSON data store.
     """
 
-    conn = get_db_connection(DB_FILE)
     try:
-        c = conn.cursor()
+        data = read_json("expenses.json")
+        categories = read_json("categories.json")
 
-        # Get the most recent expense (the one just added)
         new_expense = st.session_state.expenses[-1]
 
-        # Get category (or insert it into the categories table if doesn't exist)
-        c.execute(
-            "SELECT category FROM categories WHERE category = ?",
-            (new_expense["Category"],),
-        )
-        result = c.fetchone()
+        # Add category if it doesn't exist
+        if new_expense["Category"] not in categories:
+            categories.append(new_expense["Category"])
+            write_json("categories.json", categories)
 
-        if result:
-            category = result[0]
-        else:
-            c.execute(
-                "INSERT INTO categories (category) VALUES (?)",
-                (new_expense["Category"],),
-            )
-            category = c.lastrowid
-
-        # Insert the expense
-        c.execute(
-            """
-            INSERT INTO expenses (amount, category, date, notes, frequency, recurring_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                new_expense["Amount"],
-                category,
-                new_expense["Date"],
-                new_expense["Notes"],
-                new_expense["Frequency"],
-                new_expense["Recurring ID"],
-            ),
-        )
-
-        conn.commit()
-    except sqlite3.Error as e:
+        # Add expense record
+        record = {
+            "id": data["next_id"],
+            "amount": new_expense["Amount"],
+            "category": new_expense["Category"],
+            "date": new_expense["Date"],
+            "notes": new_expense["Notes"],
+            "frequency": new_expense["Frequency"],
+            "recurring_id": new_expense["Recurring ID"],
+        }
+        data["records"].append(record)
+        data["next_id"] += 1
+        write_json("expenses.json", data)
+    except Exception as e:
         st.error(f"Failed to saving expense input data: {e}")
-    finally:
-        conn.close()
 
 
 def delete_expense_data(expense_ids: list):
     """
-    Delete expenses from the database based on their primary key values.
+    Delete expenses from the data store based on their primary key values.
 
     Args:
         expense_ids (list): List of expense ids to be deleted
     """
 
-    conn = get_db_connection(DB_FILE)
-    if expense_ids:
-        try:
-            c = conn.cursor()
-            c.execute(
-                f"""
-                DELETE FROM expenses
-                WHERE id {f"IN {tuple(expense_ids)}" if len(expense_ids) > 1 else f"= {expense_ids[0]}"}
-                """
-            )
-            conn.commit()
-            st.success("Expense(s) deleted successfully!")
-        except sqlite3.Error as e:
-            st.error(f"Failed to delete expense data: {e}")
-        finally:
-            conn.close()
+    if not expense_ids:
+        return
+
+    try:
+        data = read_json("expenses.json")
+        ids_set = set(expense_ids)
+        data["records"] = [r for r in data["records"] if r["id"] not in ids_set]
+        write_json("expenses.json", data)
+        st.success("Expense(s) deleted successfully!")
+    except Exception as e:
+        st.error(f"Failed to delete expense data: {e}")
 
 
 def manage_categories_data(
@@ -116,23 +110,17 @@ def manage_categories_data(
         update_category (str | None): Potential category to update.
     """
 
-    conn = get_db_connection(DB_FILE)
     try:
-        c = conn.cursor()
+        categories = read_json("categories.json")
         if new_category:
-            c.execute("INSERT INTO categories (category) VALUES (?)", (new_category,))
+            categories.append(new_category)
         elif delete_category:
-            c.execute("DELETE FROM categories WHERE category = ?", (delete_category,))
+            categories = [c for c in categories if c != delete_category]
         elif update_category:
-            c.execute(
-                "UPDATE categories SET category = ? WHERE category = ?",
-                (
-                    update_category[1],
-                    update_category[0],
-                ),
-            )
-        conn.commit()
-    except sqlite3.Error as e:
+            categories = [
+                update_category[1] if c == update_category[0] else c
+                for c in categories
+            ]
+        write_json("categories.json", categories)
+    except Exception as e:
         st.error(f"Failed to saving category input data: {e}")
-    finally:
-        conn.close()

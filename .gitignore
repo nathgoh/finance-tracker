@@ -167,3 +167,6 @@ cython_debug/
 
 # db files
 *.db
+
+# JSON data files
+data/

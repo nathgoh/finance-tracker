@@ -1,42 +1,52 @@
+import pandas as pd
+
 from smolagents import Tool, tool
-from sqlalchemy import create_engine, text
 from datetime import datetime
 
-from resources.constants import DB_FILE
-from utils.db_utils import get_database_path
+from utils.json_utils import read_json
 
 
-class SQLQueryTool(Tool):
-    name = "sql_engine"
+class DataFrameQueryTool(Tool):
+    name = "dataframe_query"
     description = """
-        Allows you to perform SQL queries on tables. Returns a string representation of the result.
+        Allows you to query financial data using pandas operations.
+        The tool provides two DataFrames: 'expenses_df' and 'incomes_df'.
+        Write a Python expression that uses these DataFrames and returns a result.
+
         Args:
-            query: The query to perform. This should be correct SQL.
-            
-        Table description: \n
+            query: A valid Python/pandas expression using expenses_df and/or incomes_df.
+                   Example: "expenses_df[expenses_df['category'] == 'Grocery']['amount'].sum()"
+                   Example: "expenses_df.groupby('category')['amount'].sum().sort_values(ascending=False)"
+
+        Data Schema: \n
     """
 
     inputs = {
         "query": {
             "type": "string",
-            "description": "Enter a valid SQL query",
+            "description": "A valid Python/pandas expression using expenses_df and/or incomes_df",
         }
     }
     output_type = "string"
 
-    def forward(self, query: str):
-        engine = create_engine(f"sqlite:///{get_database_path(DB_FILE)}")
+    def forward(self, query: str) -> str:
+        expenses_data = read_json("expenses.json")
+        incomes_data = read_json("incomes.json")
+
+        expenses_df = pd.DataFrame(expenses_data["records"])
+        incomes_df = pd.DataFrame(incomes_data["records"])
 
         try:
-            output = ""
-            with engine.connect() as con:
-                rows = con.execute(text(query))
-                for row in rows:
-                    output += "\n" + str(row)
+            result = eval(query, {"__builtins__": {}}, {
+                "expenses_df": expenses_df,
+                "incomes_df": incomes_df,
+                "pd": pd,
+            })
+            output = str(result)
         except Exception as e:
-            raise ValueError(f"Full trace: {e}")
+            raise ValueError(f"Query error: {e}")
 
-        if output == "":
+        if not output or output.strip() == "":
             output = "No results found. Please try another query."
 
         return output
