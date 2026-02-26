@@ -14,7 +14,9 @@ MONTHS_MAP = {
 }
 
 LLM_MODELS = {
-    "Granite 4": "granite4",
+    "Granite 4": "granite4:1b",
+    "Ministral 3": "ministral-3:3b",
+    "LFM 2.5": "lfm2.5-thinking:latest",
 }
 
 CATEGORY_COLORS = {
