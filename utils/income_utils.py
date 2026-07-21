@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.json_utils import read_json, write_json
 
 
-def get_incomes_df(date=str(datetime.now().year)) -> pd.DataFrame:
+def get_incomes_df(year: None | str = None) -> pd.DataFrame:
     """
     Gets a DataFrame of incomes from the JSON data store.
 
@@ -19,7 +19,9 @@ def get_incomes_df(date=str(datetime.now().year)) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["id", "amount", "date", "source"])
 
-    df = df[df["date"].str.startswith(str(date))]
+    if year:
+        df = df[df["date"].str.startswith(str(year))]
+        
     return df[["id", "amount", "date", "source"]]
 
 
