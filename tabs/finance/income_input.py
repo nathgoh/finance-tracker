@@ -1,11 +1,11 @@
+from datetime import date, datetime, timezone
+
 import pandas as pd
 import streamlit as st
 
-from datetime import date, datetime
-
-from utils.income_utils import get_incomes_df, save_income_data, delete_income_data
-from utils.session_state_utils import init_income_session_state
 from resources.constants import MONTHS_MAP
+from utils.income_utils import delete_income_data, get_incomes_df, save_income_data
+from utils.session_state_utils import init_income_session_state
 
 
 def income_form():
@@ -26,7 +26,7 @@ def income_form():
         income = st.number_input(
             "Income", value=None, placeholder="Enter income amount...", format="%.2f"
         )
-        date = st.date_input("Date", datetime.now())
+        date = st.date_input("Date", datetime.now(tz=timezone.utc))
         source = st.text_input("Source")
         submit = st.form_submit_button("Add Income")
 
@@ -82,9 +82,11 @@ def get_monthly_breakdown():
         monthly_breakdown.sort_index(ascending=[False, False])
 
         years = sorted(income_df["year"].unique(), reverse=True)
-        year_select = st.selectbox("Select Year", years, index=0)
+        current_year = datetime.now(tz=timezone.utc).year
+        year_idx = years.index(current_year) if current_year in years else 0
+        year_select = st.selectbox("Select Year", years, index=year_idx)
         if year_select:
-            current_month = datetime.now().strftime("%B")
+            current_month = datetime.now(tz=timezone.utc).strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
             months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
             month_idx = next(
@@ -104,7 +106,7 @@ def get_monthly_breakdown():
                     st.metric("Average ($)", breakdown["Average ($)"])
 
                 month_income_df = get_incomes_df(
-                    f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
+                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(timezone.utc).month:02d}"
                 ).sort_values("date").reset_index(drop=True)
                 st.data_editor(
                     month_income_df,

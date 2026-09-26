@@ -1,11 +1,13 @@
-import streamlit as st
+from datetime import datetime, timezone
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
+import streamlit as st
 
-from utils.expense_utils import get_expenses_df, get_all_expense_dates
+from resources.constants import CATEGORY_COLORS, MONTHS_MAP
+from utils.expense_utils import get_all_expense_dates, get_expenses_df
 from utils.income_utils import get_incomes_df
-from resources.constants import MONTHS_MAP, CATEGORY_COLORS
 
 st.title("Finance Dashboard")
 
@@ -168,38 +170,38 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         node_index += 1
 
     category_expense_bar = go.Figure(data=[go.Sankey(
-        node=dict(
-            pad=20,
-            thickness=30,
-            line=dict(color="white", width=1),
-            label=node_labels,
-            color=node_colors,
-            customdata=node_customdata,
-            hovertemplate=(
+        node={
+            "pad": 20,
+            "thickness": 30,
+            "line": {"color": "white", "width": 1},
+            "label": node_labels,
+            "color": node_colors,
+            "customdata": node_customdata,
+            "hovertemplate": (
                 "<b>%{customdata[0]}</b><br>"
                 "Amount: $%{customdata[1]:,.2f}<br>"
                 "% of Total: %{customdata[2]:.1f}%"
                 "<extra></extra>"
             ),
-        ),
-        link=dict(
-            source=sources,
-            target=targets,
-            value=link_values,
-            color=link_colors_rgba,
-            customdata=link_customdata,
-            hovertemplate=(
+        },
+        link={
+            "source": sources,
+            "target": targets,
+            "value": link_values,
+            "color": link_colors_rgba,
+            "customdata": link_customdata,
+            "hovertemplate": (
                 "<b>%{customdata[0]}</b><br>"
                 "Amount: $%{customdata[1]:,.2f}<br>"
                 "% of Total: %{customdata[2]:.1f}%"
                 "<extra></extra>"
             ),
-        ),
+        },
     )])
 
     category_expense_bar.update_layout(
         title="Financial Flow: Income → Expenses → Categories",
-        font=dict(size=12),
+        font={"size": 12},
         height=500,
     )
 
@@ -221,7 +223,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
             x=sum_month_df["Date"],
             y=sum_month_df["Amount ($)"],
             name=name,
-            marker=dict(color=color),
+            marker={"color": color},
             hovertemplate="<b>Date:</b> %{x}<br><b>Amount:</b> $%{y:.2f}<extra></extra>",
         )
         return finance_chart, sum_month_df
@@ -294,7 +296,9 @@ def dashboard():
     dates = get_all_expense_dates()
 
     years = sorted(pd.to_datetime(dates["date"]).dt.year.unique(), reverse=True)
-    year_select = st.selectbox("Select Year", years, index=0)
+    current_year = datetime.now(tz=timezone.utc).year
+    year_idx = years.index(current_year) if current_year in years else 0
+    year_select = st.selectbox("Select Year", years, index=year_idx)
     if year_select:
         # Expense and income dataframes
         expense_df = get_expenses_df(year_select)
@@ -372,7 +376,7 @@ def dashboard():
             )
 
             finance_chart.update_layout(
-                xaxis=dict(categoryorder="array", categoryarray=list(MONTHS_MAP.keys()))
+                xaxis={"categoryorder": "array", "categoryarray": list(MONTHS_MAP.keys())}
             )
             st.plotly_chart(category_expense_bar)
             st.plotly_chart(finance_chart)

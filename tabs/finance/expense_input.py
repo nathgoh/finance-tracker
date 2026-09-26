@@ -1,19 +1,20 @@
-from datetime import date, datetime
-from dateutil.relativedelta import relativedelta
-from time import sleep
-import plotly.express as px
-
 import uuid
+from datetime import date, datetime, timezone
+from time import sleep
+
 import pandas as pd
+import plotly.express as px
 import streamlit as st
+from dateutil.relativedelta import relativedelta
+
+from resources.constants import CATEGORY_COLORS, MONTHS_MAP
 from utils.expense_utils import (
-    get_expenses_df,
-    save_expense_data,
     delete_expense_data,
+    get_expenses_df,
     manage_categories_data,
+    save_expense_data,
 )
 from utils.session_state_utils import init_expense_session_state
-from resources.constants import MONTHS_MAP, CATEGORY_COLORS
 
 
 def expense_form():
@@ -35,7 +36,7 @@ def expense_form():
             "Expense", value=None, placeholder="Enter expense amount...", format="%.2f"
         )
         category = st.selectbox("Categories", st.session_state.categories)
-        date = st.date_input("Date", datetime.now())
+        date = st.date_input("Date", datetime.now(tz=timezone.utc))
         notes = st.text_input("Notes")
         submit = st.form_submit_button("Add Expense")
 
@@ -252,9 +253,11 @@ def get_monthly_breakdown():
         monthly_breakdown.sort_index(ascending=[False, False], inplace=True)
 
         years = sorted(expense_df["year"].unique(), reverse=True)
-        year_select = st.selectbox("Select Year", years, index=0)
+        current_year = datetime.now(tz=timezone.utc).year
+        year_idx = years.index(current_year) if current_year in years else 0
+        year_select = st.selectbox("Select Year", years, index=year_idx)
         if year_select:
-            current_month = datetime.now().strftime("%B")
+            current_month = datetime.now(tz=timezone.utc).strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
             months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
             month_idx = next(
@@ -272,7 +275,7 @@ def get_monthly_breakdown():
                     st.metric("Total Non-Rent ($)", breakdown["Total Non-Rent ($)"])
 
                 month_expense_df = get_expenses_df(
-                    f"{year_select}-{datetime.strptime(month_select, '%B').month:02d}"
+                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(timezone.utc).month:02d}"
                 ).sort_values("date").reset_index(drop=True)
 
                 category_breakdown = (
