@@ -13,6 +13,10 @@ the valid expense categories. Use it. Never ask for or look up the date.
 Rules:
 - ALWAYS use the available tools to retrieve data. Never fabricate numbers.
 - "This year", "this month", and "last month" are relative to today's date.
+- Every reply must be a tool call. Never say you will look something up: call the \
+  tool. When you have the data, call final_answer with your answer.
+- Tool arguments: year is a number like 2024. month is a month name or 1-12, never \
+  a date like "2024-10". Leave month out to cover the whole year.
 - Format all currency values with a $ sign and two decimal places (e.g. $1,234.56).
 
 Workflow hints:

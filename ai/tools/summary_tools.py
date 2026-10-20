@@ -19,7 +19,7 @@ def get_financial_summary(year: int, month: str = "") -> str:
 
     Args:
         year: The year to query (e.g. 2025).
-        month: Month to filter by (e.g. "January", "jan", or "1"). Leave empty for the whole year.
+        month: A month name or number 1-12 (e.g. "March" or "3"), never a date. Leave empty for the whole year.
 
     Returns:
         str: JSON financial summary.

@@ -3,6 +3,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 from smolagents import OpenAIServerModel, ToolCallingAgent
+from smolagents.monitoring import LogLevel
 
 from ai.prompts import FINANCIAL_AGENT_INSTRUCTIONS
 from ai.tools import ALL_TOOLS
@@ -27,4 +28,5 @@ def get_agent(model_name: str) -> ToolCallingAgent:
         model=model,
         instructions=FINANCIAL_AGENT_INSTRUCTIONS,
         max_steps=6,
+        verbosity_level=LogLevel.DEBUG,
     )

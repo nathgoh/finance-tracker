@@ -1,4 +1,5 @@
 import difflib
+import re
 
 import pandas as pd
 
@@ -49,6 +50,11 @@ def list_categories() -> list[str]:
 
 def resolve_month(month_input: str) -> int:
     month_input = str(month_input).strip()
+
+    # Models often send a date like "2024-10" or "2024-10-15" instead of a month
+    date_match = re.fullmatch(r"\d{4}-(\d{1,2})(?:-\d{1,2})?", month_input)
+    if date_match:
+        month_input = date_match.group(1)
 
     if month_input.isdigit():
         m = int(month_input)
