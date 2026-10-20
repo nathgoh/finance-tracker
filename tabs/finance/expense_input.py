@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, date, datetime, timezone
+from datetime import UTC, date, datetime
 from time import sleep
 
 import pandas as pd

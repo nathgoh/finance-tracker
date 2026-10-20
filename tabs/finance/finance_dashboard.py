@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import plotly.express as px
@@ -229,9 +229,9 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         return finance_chart, sum_month_df
 
     monthly_expense_df = (
-        reformatted_expense_df.groupby("Category")
+        reformatted_expense_df.groupby("Category")["Amount ($)"]
         .resample("ME")
-        .sum(numeric_only=True)
+        .sum()
         .reset_index()
         .set_index("Date")
     )
@@ -263,9 +263,9 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
             }
         ).set_index("Date")
         monthly_income_df = (
-            reformatted_income_df.groupby("Source")
+            reformatted_income_df.groupby("Source")["Amount ($)"]
             .resample("ME")
-            .sum(numeric_only=True)
+            .sum()
             .reset_index()
             .set_index("Date")
         )
@@ -296,7 +296,7 @@ def dashboard():
     dates = get_all_expense_dates()
 
     years = sorted(pd.to_datetime(dates["date"]).dt.year.unique(), reverse=True)
-    current_year = datetime.now(tz=timezone.utc).year
+    current_year = datetime.now(tz=UTC).year
     year_idx = years.index(current_year) if current_year in years else 0
     year_select = st.selectbox("Select Year", years, index=year_idx)
     if year_select:
