@@ -17,7 +17,7 @@ def get_incomes_df(year: None | str = None) -> pd.DataFrame:
     df = pd.DataFrame(data["records"])
 
     if df.empty:
-        return pd.DataFrame(columns=["id", "amount", "date", "source"])
+        return pd.DataFrame(columns=pd.Index(["id", "amount", "date", "source"]))
 
     if year:
         df = df[df["date"].str.startswith(str(year))]

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 from smolagents import tool
 
@@ -13,7 +13,7 @@ def current_date() -> str:
     Returns:
         str: JSON with today's date, year, and month.
     """
-    today = datetime.today()
+    today = datetime.now(tz=UTC)
     result = {
         "date": today.strftime("%Y-%m-%d"),
         "year": today.year,

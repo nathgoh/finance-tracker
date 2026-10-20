@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from time import sleep
 
 import pandas as pd
@@ -36,7 +36,7 @@ def expense_form():
             "Expense", value=None, placeholder="Enter expense amount...", format="%.2f"
         )
         category = st.selectbox("Categories", st.session_state.categories)
-        date = st.date_input("Date", datetime.now(tz=timezone.utc))
+        date = st.date_input("Date", datetime.now(tz=UTC))
         notes = st.text_input("Notes")
         submit = st.form_submit_button("Add Expense")
 
@@ -186,21 +186,20 @@ def manage_categories():
                 with col_1:
                     if st.button(
                         "Update", key=f"update_{idx}", width="stretch"
-                    ):
-                        if new_category_name != category:
-                            # Update category name in expenses
-                            for expense in st.session_state.expenses:
-                                if expense["category"] == category:
-                                    expense["category"] = new_category_name
+                    ) and new_category_name != category:
+                        # Update category name in expenses
+                        for expense in st.session_state.expenses:
+                            if expense["category"] == category:
+                                expense["category"] = new_category_name
 
-                            # Update category list
-                            st.session_state.categories[idx] = new_category_name
-                            manage_categories_data(
-                                None, None, [category, new_category_name]
-                            )
-                            st.success(f"Updated: {category} → {new_category_name}")
-                            sleep(0.5)
-                            st.rerun()
+                        # Update category list
+                        st.session_state.categories[idx] = new_category_name
+                        manage_categories_data(
+                            None, None, [category, new_category_name]
+                        )
+                        st.success(f"Updated: {category} → {new_category_name}")
+                        sleep(0.5)
+                        st.rerun()
                 with col_2:
                     if st.button(
                         "Delete", key=f"delete_{idx}", width="stretch"
@@ -253,13 +252,13 @@ def get_monthly_breakdown():
         monthly_breakdown.sort_index(ascending=[False, False], inplace=True)
 
         years = sorted(expense_df["year"].unique(), reverse=True)
-        current_year = datetime.now(tz=timezone.utc).year
+        current_year = datetime.now(tz=UTC).year
         year_idx = years.index(current_year) if current_year in years else 0
         year_select = st.selectbox("Select Year", years, index=year_idx)
         if year_select:
-            current_month = datetime.now(tz=timezone.utc).strftime("%B")
+            current_month = datetime.now(tz=UTC).strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
-            months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
+            months = sorted(year_data.index.tolist(), key=lambda m: MONTHS_MAP[m])
             month_idx = next(
                 (i for i, m in enumerate(months) if m == current_month),
                 months.index(months[0]) if months else 0,
@@ -275,7 +274,7 @@ def get_monthly_breakdown():
                     st.metric("Total Non-Rent ($)", breakdown["Total Non-Rent ($)"])
 
                 month_expense_df = get_expenses_df(
-                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(timezone.utc).month:02d}"
+                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(UTC).month:02d}"
                 ).sort_values("date").reset_index(drop=True)
 
                 category_breakdown = (
@@ -304,13 +303,13 @@ def get_monthly_breakdown():
                         color_discrete_map=CATEGORY_COLORS,
                     )
                     category_bar.update_layout(
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=-0.7,
-                            xanchor="center",
-                            x=0.5,
-                        ),
+                        legend={
+                            "orientation": "h",
+                            "yanchor": "bottom",
+                            "y": -0.7,
+                            "xanchor": "center",
+                            "x": 0.5,
+                        },
                         barmode="stack",
                         height=300,
                     )
@@ -320,9 +319,10 @@ def get_monthly_breakdown():
                     )
                     st.plotly_chart(category_bar)
 
+                editor_key = f"edited_month_expense_{st.session_state.get('expense_editor_version', 0)}"
                 st.data_editor(
                     month_expense_df,
-                    key="edited_month_expense",
+                    key=editor_key,
                     num_rows="dynamic",
                     column_order=["date", "category", "amount", "notes"],
                     column_config={
@@ -336,18 +336,14 @@ def get_monthly_breakdown():
                     hide_index=True,
                 )
 
-                if (
-                    st.session_state.edited_month_expense.get("deleted_rows")
-                    is not None
-                ):
-                    rows_to_delete = st.session_state.edited_month_expense.get(
-                        "deleted_rows"
-                    )
+                rows_to_delete = st.session_state[editor_key].get("deleted_rows")
+                if rows_to_delete:
                     ids_to_delete = [
                         int(month_expense_df.iloc[i].id) for i in rows_to_delete
                     ]
                     delete_expense_data(ids_to_delete)
-                    st.session_state.edited_month_expense["deleted_rows"] = None
+                    # Widget state is read-only; bump the key to reset the editor
+                    st.session_state["expense_editor_version"] = st.session_state.get("expense_editor_version", 0) + 1
                     st.rerun()
 
 

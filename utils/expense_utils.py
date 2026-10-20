@@ -19,7 +19,7 @@ def get_expenses_df(year: None | str = None) -> pd.DataFrame:
     df = pd.DataFrame(data["records"])
 
     if df.empty:
-        return pd.DataFrame(columns=["id", "amount", "category", "date", "notes"])
+        return pd.DataFrame(columns=pd.Index(["id", "amount", "category", "date", "notes"]))
 
     if year:
         df = df[df["date"].str.startswith(str(year))]
@@ -39,7 +39,7 @@ def get_all_expense_dates() -> pd.DataFrame:
     df = pd.DataFrame(data["records"])
 
     if df.empty:
-        return pd.DataFrame(columns=["date"])
+        return pd.DataFrame(columns=pd.Index(["date"]))
 
     return df[["date"]]
 

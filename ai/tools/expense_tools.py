@@ -1,7 +1,6 @@
 import json
 
 import pandas as pd
-
 from smolagents import tool
 
 from resources.constants import MONTHS_MAP
@@ -13,8 +12,9 @@ def _load_expenses_df() -> pd.DataFrame:
     records = data.get("records", [])
     if not records:
         return pd.DataFrame(
-            columns=["id", "amount", "category", "date", "notes",
-                      "frequency", "recurring_id"]
+            columns=pd.Index(
+                ["id", "amount", "category", "date", "notes", "frequency", "recurring_id"]
+            )
         )
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
@@ -69,7 +69,7 @@ def get_monthly_expenses(year: str, month: str) -> str:
 
     y = int(year)
     m = _resolve_month(month)
-    month_name = [k for k, v in MONTHS_MAP.items() if v == m][0]
+    month_name = next(k for k, v in MONTHS_MAP.items() if v == m)
 
     filtered = df[(df["date"].dt.year == y) & (df["date"].dt.month == m)]
     if filtered.empty:
@@ -164,7 +164,7 @@ def get_top_expenses(year: str, month: str = "", limit: str = "5") -> str:
     period = str(y)
     if month:
         m = _resolve_month(month)
-        month_name = [k for k, v in MONTHS_MAP.items() if v == m][0]
+        month_name = next(k for k, v in MONTHS_MAP.items() if v == m)
         filtered = filtered[filtered["date"].dt.month == m]
         period = f"{month_name} {y}"
 

@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from typing import Any
 
 import streamlit as st
 
@@ -40,7 +41,7 @@ def get_json_path(filename: str) -> str:
     return os.path.join(get_data_dir(), filename)
 
 
-def read_json(filename: str) -> dict | list:
+def read_json(filename: str) -> Any:
     """
     Read and parse a JSON data file.
 

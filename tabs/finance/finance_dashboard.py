@@ -211,7 +211,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
             monthly_df.groupby("Date")["Amount ($)"]
             .sum()
             .reset_index()
-            .sort_values(by="Date", key=lambda x: [MONTHS_MAP[m] for m in x])
+            .sort_values(by="Date", key=lambda x: x.map(MONTHS_MAP))
         ).reset_index(drop=True)
         sum_month_df["Date"] = pd.Categorical(
             sum_month_df["Date"], categories=list(MONTHS_MAP.keys()), ordered=True
@@ -231,7 +231,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     monthly_expense_df = (
         reformatted_expense_df.groupby("Category")
         .resample("ME")
-        .sum("Amount ($)")
+        .sum(numeric_only=True)
         .reset_index()
         .set_index("Date")
     )
@@ -253,7 +253,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
     )
 
     # Add income to finance chart
-    sum_month_income_df = pd.DataFrame(columns=["Date", "Income Amount ($)"])
+    sum_month_income_df = pd.DataFrame(columns=pd.Index(["Date", "Income Amount ($)"]))
     if not income_df.empty:
         reformatted_income_df = pd.DataFrame(
             {
@@ -265,7 +265,7 @@ def finance_figures(income_df: pd.DataFrame, expense_df: pd.DataFrame) -> tuple:
         monthly_income_df = (
             reformatted_income_df.groupby("Source")
             .resample("ME")
-            .sum("Amount ($)")
+            .sum(numeric_only=True)
             .reset_index()
             .set_index("Date")
         )

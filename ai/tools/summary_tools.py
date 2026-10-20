@@ -1,7 +1,6 @@
 import json
 
 import pandas as pd
-
 from smolagents import tool
 
 from resources.constants import MONTHS_MAP
@@ -13,8 +12,9 @@ def _load_expenses_df() -> pd.DataFrame:
     records = data.get("records", [])
     if not records:
         return pd.DataFrame(
-            columns=["id", "amount", "category", "date", "notes",
-                      "frequency", "recurring_id"]
+            columns=pd.Index(
+                ["id", "amount", "category", "date", "notes", "frequency", "recurring_id"]
+            )
         )
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
@@ -25,7 +25,7 @@ def _load_incomes_df() -> pd.DataFrame:
     data = read_json("incomes.json")
     records = data.get("records", [])
     if not records:
-        return pd.DataFrame(columns=["id", "amount", "date", "source"])
+        return pd.DataFrame(columns=pd.Index(["id", "amount", "date", "source"]))
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
     return df
@@ -80,7 +80,7 @@ def get_financial_summary(year: str, month: str = "") -> str:
 
     if month:
         m = _resolve_month(month)
-        month_name = [k for k, v in MONTHS_MAP.items() if v == m][0]
+        month_name = next(k for k, v in MONTHS_MAP.items() if v == m)
         period = f"{month_name} {y}"
         if not exp_filtered.empty:
             exp_filtered = exp_filtered[exp_filtered["date"].dt.month == m]
@@ -136,8 +136,8 @@ def compare_months(year: str, month_1: str, month_2: str) -> str:
     y = int(year)
     first_month = _resolve_month(month_1)
     second_month = _resolve_month(month_2)
-    first_month_name = [k for k, v in MONTHS_MAP.items() if v == first_month][0]
-    second_month_name = [k for k, v in MONTHS_MAP.items() if v == second_month][0]
+    first_month_name = next(k for k, v in MONTHS_MAP.items() if v == first_month)
+    second_month_name = next(k for k, v in MONTHS_MAP.items() if v == second_month)
 
     def _month_totals(df, month_num, amount_col="amount", group_col=None):
         if df.empty:
@@ -235,7 +235,7 @@ def get_spending_trend(year: str, category: str = "") -> str:
     months = []
     prev = None
     for month_num, amount in monthly.items():
-        month_name = [k for k, v in MONTHS_MAP.items() if v == month_num][0]
+        month_name = next(k for k, v in MONTHS_MAP.items() if v == month_num)
         amount = round(float(amount), 2)
         entry = {"month": month_name, "amount": amount}
         if prev is not None and prev > 0:

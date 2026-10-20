@@ -1,5 +1,5 @@
 run:
-	streamlit run app.py
+	uv run streamlit run app.py
 
 lint:
-	ruff format && ruff check --fix
+	uv run ruff format && uv run ruff check --fix

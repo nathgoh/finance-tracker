@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 
 import pandas as pd
 import streamlit as st
@@ -26,7 +26,7 @@ def income_form():
         income = st.number_input(
             "Income", value=None, placeholder="Enter income amount...", format="%.2f"
         )
-        date = st.date_input("Date", datetime.now(tz=timezone.utc))
+        date = st.date_input("Date", datetime.now(tz=UTC))
         source = st.text_input("Source")
         submit = st.form_submit_button("Add Income")
 
@@ -82,13 +82,13 @@ def get_monthly_breakdown():
         monthly_breakdown.sort_index(ascending=[False, False])
 
         years = sorted(income_df["year"].unique(), reverse=True)
-        current_year = datetime.now(tz=timezone.utc).year
+        current_year = datetime.now(tz=UTC).year
         year_idx = years.index(current_year) if current_year in years else 0
         year_select = st.selectbox("Select Year", years, index=year_idx)
         if year_select:
-            current_month = datetime.now(tz=timezone.utc).strftime("%B")
+            current_month = datetime.now(tz=UTC).strftime("%B")
             year_data = monthly_breakdown.loc[year_select]
-            months = sorted(year_data.index.tolist(), key=MONTHS_MAP.get)
+            months = sorted(year_data.index.tolist(), key=lambda m: MONTHS_MAP[m])
             month_idx = next(
                 (i for i, m in enumerate(months) if m == current_month),
                 months.index(months[0]) if months else 0,
@@ -106,11 +106,12 @@ def get_monthly_breakdown():
                     st.metric("Average ($)", breakdown["Average ($)"])
 
                 month_income_df = get_incomes_df(
-                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(timezone.utc).month:02d}"
+                    f"{year_select}-{datetime.strptime(month_select, '%B').astimezone(UTC).month:02d}"
                 ).sort_values("date").reset_index(drop=True)
+                editor_key = f"edited_month_income_{st.session_state.get('income_editor_version', 0)}"
                 st.data_editor(
                     month_income_df,
-                    key="edited_month_income",
+                    key=editor_key,
                     num_rows="dynamic",
                     column_order=["date", "amount", "source"],
                     column_config={
@@ -123,15 +124,14 @@ def get_monthly_breakdown():
                     hide_index=True,
                 )
 
-                if st.session_state.edited_month_income.get("deleted_rows") is not None:
-                    rows_to_delete = st.session_state.edited_month_income.get(
-                        "deleted_rows"
-                    )
+                rows_to_delete = st.session_state[editor_key].get("deleted_rows")
+                if rows_to_delete:
                     ids_to_delete = [
                         int(month_income_df.iloc[i].id) for i in rows_to_delete
                     ]
                     delete_income_data(ids_to_delete)
-                    st.session_state.edited_month_income["deleted_rows"] = None
+                    # Widget state is read-only; bump the key to reset the editor
+                    st.session_state["income_editor_version"] = st.session_state.get("income_editor_version", 0) + 1
                     st.rerun()
 
 

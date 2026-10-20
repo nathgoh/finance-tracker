@@ -1,3 +1,30 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "finance_tracker"
+version = "0.1.0"
+description = "Python app for tracking finances"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Nathaniel Goh" }]
+dependencies = [
+    "pandas==2.3.3",
+    "numpy==2.2.6",
+    "streamlit",
+    "plotly",
+    "ollama",
+    "watchdog",
+    "toon-format",
+    "smolagents[openai]",
+]
+
+[project.urls]
+Homepage = "https://github.com/nathgoh/finance-tracker"
+
+[dependency-groups]
+dev = ["ruff"]
+
+[tool.setuptools.packages.find]
+include = ["ai*"]

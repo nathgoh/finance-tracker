@@ -1,7 +1,6 @@
 import json
 
 import pandas as pd
-
 from smolagents import tool
 
 from resources.constants import MONTHS_MAP
@@ -12,7 +11,7 @@ def _load_incomes_df() -> pd.DataFrame:
     data = read_json("incomes.json")
     records = data.get("records", [])
     if not records:
-        return pd.DataFrame(columns=["id", "amount", "date", "source"])
+        return pd.DataFrame(columns=pd.Index(["id", "amount", "date", "source"]))
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
     return df
@@ -59,7 +58,7 @@ def get_monthly_income(year: str, month: str = "") -> str:
     period = str(y)
     if month:
         m = _resolve_month(month)
-        month_name = [k for k, v in MONTHS_MAP.items() if v == m][0]
+        month_name = next(k for k, v in MONTHS_MAP.items() if v == m)
         filtered = filtered[filtered["date"].dt.month == m]
         period = f"{month_name} {y}"
 
