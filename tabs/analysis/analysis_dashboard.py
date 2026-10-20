@@ -3,6 +3,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 import streamlit as st
 
 from ai.agent import get_agent
+from ai.prompts import build_task
 from resources.constants import LLM_MODELS
 
 
@@ -14,7 +15,7 @@ def get_executor() -> ThreadPoolExecutor:
 
 def run_agent(model: str, query: str, reset: bool) -> str:
     # Runs in a worker thread, so it must not touch st.session_state or render anything
-    return get_agent(model).run(task=query, reset=reset)
+    return get_agent(model).run(task=build_task(query), reset=reset)
 
 
 @st.fragment(run_every=2)

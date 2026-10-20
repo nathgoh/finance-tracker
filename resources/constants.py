@@ -14,9 +14,9 @@ MONTHS_MAP = {
 }
 
 LLM_MODELS = {
-    "Bonsai 4B": "bonsai-4b",
-    "MiniCPM V5": "minicpm-2b",
-    "LFM 2.5": "lfm2.5-2.6b:latest",
+    "MiniCPM V5 1B": "openbmb/minicpm5:latest",
+    "LFM 2.5": "LiquidAI/lfm2.5-2.6b:latest",
+    "Bonsai 2B": "bonsai-2:2b"
 }
 
 CATEGORY_COLORS = {

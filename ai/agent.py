@@ -10,7 +10,8 @@ from resources.constants import LLM_MODELS
 
 load_dotenv()
 
-OLLAMA_OPENAI_ENDPOINT = os.getenv("LLAMA_SWAP_ENDPOINT")
+OLLAMA_OPENAI_ENDPOINT = os.getenv("OLLAMA_OPENAI_ENDPOINT")
+
 
 @st.cache_resource
 def get_agent(model_name: str) -> ToolCallingAgent:
@@ -18,7 +19,7 @@ def get_agent(model_name: str) -> ToolCallingAgent:
         model_id=LLM_MODELS[model_name],
         api_base=OLLAMA_OPENAI_ENDPOINT,
         api_key="ollama",
-        temperature=0.3,
+        temperature=0.1,
     )
 
     return ToolCallingAgent(
