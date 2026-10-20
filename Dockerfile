@@ -5,12 +5,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY ../finance-tracker /app
 WORKDIR /app
 
 # Install dependencies first so this layer is cached until pyproject/uv.lock change
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
+
+COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 
