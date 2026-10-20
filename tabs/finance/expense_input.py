@@ -74,7 +74,7 @@ def add_expense(
         "Amount": amount,
         "Category": category,
         "Date": date.strftime("%Y-%m-%d"),
-        "Notes": notes,
+        "Notes": notes.strip(),
         "Frequency": frequency,
         "Recurring ID": recurring_id,
     }

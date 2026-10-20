@@ -50,7 +50,7 @@ def add_income(amount: float, date: date, source: str):
     income = {
         "Amount": amount,
         "Date": date.strftime("%Y-%m-%d"),
-        "Source": source,
+        "Source": source.strip(),
     }
     st.session_state.incomes.append(income)
     save_income_data()
